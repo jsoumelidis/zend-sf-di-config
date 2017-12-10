@@ -67,7 +67,6 @@ class ConfigTest extends TestCase
         ];
 
         $config = new Config(['dependencies' => $dependencies], true);
-        /** @var ContainerBuilder $container */
         $container = $this->containerFactory->__invoke($config);
 
         $this->assertTrue($container->has(InvokableService::class));
@@ -438,8 +437,7 @@ class ConfigTest extends TestCase
         //Given a private service with id InvokableService::class
         $serviceDefinition = $builder
             ->register(InvokableService::class, InvokableService::class)
-            ->setPublic(false)
-            ->setPrivate(true);
+            ->setPublic(false);
 
         //Given a public alias 'myalias' to InvokableService::class service id
         $builder
@@ -463,7 +461,6 @@ class ConfigTest extends TestCase
         $definition = $builder->getDefinition(InvokableService::class);
 
         $this->assertEquals($serviceDefinition->isPublic(), $definition->isPublic());
-        $this->assertEquals($serviceDefinition->isPrivate(), $definition->isPrivate());
 
         $builder->compile();
 

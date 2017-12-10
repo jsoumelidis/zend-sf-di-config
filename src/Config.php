@@ -188,7 +188,7 @@ class Config implements ConfigInterface
 
         //Create an "internal" definition and make it public
         //so it can be fetched later by the $factoryCallbackId Closure
-        $originDefinition = (clone $definition)->setPublic(true)->setPrivate(false);
+        $originDefinition = (clone $definition)->setPublic(true);
 
         $originId = $this->zendSmSfDiBridgeCreateId("{$id}.origin");
         $builder->setDefinition($originId, $originDefinition);
@@ -246,7 +246,6 @@ class Config implements ConfigInterface
         $builder
             ->register($id, $definition->getClass())
             ->setPublic($definition->isPublic())
-            ->setPrivate($definition->isPrivate())
             ->setShared($definition->isShared())
             ->setFactory([new Reference($factoryCallbackId), '__invoke']);
     }

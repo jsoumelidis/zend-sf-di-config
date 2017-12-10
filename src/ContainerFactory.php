@@ -11,7 +11,7 @@ class ContainerFactory
      * @param ConfigInterface $config
      * @param ContainerBuilder|null $builder
      *
-     * @return ContainerInterface
+     * @return ContainerBuilder
      */
     public function __invoke(ConfigInterface $config, ContainerBuilder $builder = null)
     {
