@@ -3,7 +3,6 @@
 namespace JSoumelidis\SymfonyDI\Config;
 
 use Closure;
-use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;

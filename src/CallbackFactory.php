@@ -152,7 +152,8 @@ class CallbackFactory
         callable $factoryCallback
     ) {
         return function () use ($callable, $container, $requestedName, $factoryCallback) {
-            return $callable($container, $requestedName, $factoryCallback);
+            //PHP 5.6 fix
+            return call_user_func($callable, $container, $requestedName, $factoryCallback);
         };
     }
 }
