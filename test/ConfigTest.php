@@ -13,6 +13,7 @@ use JSoumelidisTest\SymfonyDI\Config\Service\InvokableService;
 use JSoumelidisTest\SymfonyDI\Config\Service\ServiceWithDependency;
 use JSoumelidisTest\SymfonyDI\Config\Service\Wrapper;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use UnexpectedValueException;
 
@@ -440,9 +441,10 @@ class ConfigTest extends TestCase
             ->setPublic(false);
 
         //Given a public alias 'myalias' to InvokableService::class service id
-        $builder
-            ->setAlias('myalias', InvokableService::class)
-            ->setPublic(true);
+        $alias = new Alias(InvokableService::class);
+        $alias->setPublic(true);
+
+        $builder->setAlias('myalias', $alias);
 
         $dependencies = [
             'delegators' => [
