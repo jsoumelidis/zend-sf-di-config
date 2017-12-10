@@ -1,6 +1,6 @@
 # zend-sf-di-config
 
-[![Build Status](https://secure.travis-ci.org/zendframework/zend-auradi-config.svg?branch=master)](https://secure.travis-ci.org/zendframework/zend-auradi-config)
+[![Build Status](https://secure.travis-ci.org/jsoumelidis/zend-sf-di-config.svg?branch=master)](https://secure.travis-ci.org/jsoumelidis/zend-sf-di-config)
 [![Coverage Status](https://coveralls.io/repos/github/zendframework/zend-auradi-config/badge.svg?branch=master)](https://coveralls.io/github/zendframework/zend-auradi-config?branch=master)
 
 This library provides utilities to configure
