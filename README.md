@@ -1,7 +1,7 @@
 # zend-sf-di-config
 
 [![Build Status](https://secure.travis-ci.org/jsoumelidis/zend-sf-di-config.svg?branch=master)](https://secure.travis-ci.org/jsoumelidis/zend-sf-di-config)
-[![Coverage Status](https://coveralls.io/repos/github/zendframework/zend-auradi-config/badge.svg?branch=master)](https://coveralls.io/github/zendframework/zend-auradi-config?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/jsoumelidis/zend-sf-di-config/badge.svg?branch=master)](https://coveralls.io/github/jsoumelidis/zend-sf-di-config?branch=master)
 
 This library provides utilities to configure
 a [PSR-11](http://www.php-fig.org/psr/psr-11/) compatible
