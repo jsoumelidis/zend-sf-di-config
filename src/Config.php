@@ -3,6 +3,7 @@
 namespace JSoumelidis\SymfonyDI\Config;
 
 use Closure;
+use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
@@ -35,6 +36,18 @@ class Config implements ConfigInterface
         ) {
             $dependencies = $this->config['dependencies'];
 
+            //Inject known services
+            if (! empty($dependencies['services']) && is_array($dependencies['services'])) {
+                foreach ($dependencies['services'] as $name => $object) {
+                    if ($this->servicesAsSynthetic) {
+                        $type = is_object($object) ? get_class($object) : gettype($object);
+                        $builder->register($name, $type)->setSynthetic(true);
+                    } else {
+                        $builder->set($name, $object);
+                    }
+                }
+            }
+
             //Inject invokable services
             if (! empty($dependencies['invokables']) && is_array($dependencies['invokables'])) {
                 foreach ($dependencies['invokables'] as $name => $invokable) {
@@ -49,34 +62,19 @@ class Config implements ConfigInterface
                 }
             }
 
-            //Inject delegators
-            if (! empty($dependencies['delegators']) && is_array($dependencies['delegators'])) {
-                foreach ($dependencies['delegators'] as $name => $delegatorNames) {
-                    if (! is_array($delegatorNames) || ! $delegatorNames) {
-                        continue;
-                    }
-
-                    $this->injectDelegators($name, $delegatorNames, $builder);
-                }
-            }
-
-            //Inject known services
-            //Known services remove definitions
-            if (! empty($dependencies['services']) && is_array($dependencies['services'])) {
-                foreach ($dependencies['services'] as $name => $object) {
-                    if ($this->servicesAsSynthetic) {
-                        $type = is_object($object) ? get_class($object) : gettype($object);
-                        $builder->register($name, $type)->setSynthetic(true);
-                    } else {
-                        $builder->set($name, $object);
-                    }
-                }
-            }
-
             //Inject aliases
             if (! empty($dependencies['aliases']) && is_array($dependencies['aliases'])) {
                 foreach ($dependencies['aliases'] as $alias => $name) {
                     $builder->setAlias($alias, $name);
+                }
+            }
+
+            //Inject delegators
+            if (! empty($dependencies['delegators']) && is_array($dependencies['delegators'])) {
+                foreach ($dependencies['delegators'] as $name => $delegatorNames) {
+                    if (is_array($delegatorNames) && $delegatorNames) {
+                        $this->injectDelegators($name, $delegatorNames, $builder);
+                    }
                 }
             }
         }
@@ -171,7 +169,7 @@ class Config implements ConfigInterface
             );
         }
 
-        if (! $builder->hasDefinition($id) || $builder->getDefinition($id)->isSynthetic()) {
+        if (! $builder->hasDefinition($id)) {
             throw new UnexpectedValueException(
                 "Delegators for undefined/runtime services are not supported ({$id})"
             );
@@ -179,17 +177,21 @@ class Config implements ConfigInterface
 
         $definition = $builder->getDefinition($id);
 
-        if (! $definition->isPublic()) {
+        if ($definition->isSynthetic()) {
             throw new UnexpectedValueException(
-                "Delegators for private services are not supported ({$id})"
+                "Delegators for synthetic services are not supported ({$id})"
             );
         }
 
         //we will rename the original service's id to something 'private'
         $builder->removeDefinition($id);
 
+        //Create an "internal" definition and make it public
+        //so it can be fetched later by the $factoryCallbackId Closure
+        $originDefinition = (clone $definition)->setPublic(true)->setPrivate(false);
+
         $originId = $this->zendSmSfDiBridgeCreateId("{$id}.origin");
-        $builder->setDefinition($originId, $definition);
+        $builder->setDefinition($originId, $originDefinition);
 
         //register a closure that, when fetched and invoked, returns
         //the original service from the container
@@ -240,8 +242,11 @@ class Config implements ConfigInterface
         }
 
         //Finally, register the last Closure as factory for the service
+        //This action removes any previous alias registered for $id
         $builder
             ->register($id, $definition->getClass())
+            ->setPublic($definition->isPublic())
+            ->setPrivate($definition->isPrivate())
             ->setShared($definition->isShared())
             ->setFactory([new Reference($factoryCallbackId), '__invoke']);
     }

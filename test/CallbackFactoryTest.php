@@ -29,7 +29,7 @@ class CallbackFactoryTest extends TestCase
     public function testCreatesFactoryCallbackFromCallable()
     {
         $container = new Container();
-        $callable = function(ContainerInterface $container, $requestedName) {
+        $callable = function (ContainerInterface $container, $requestedName) {
             if ($requestedName === 'myservice') {
                 return new \stdClass();
             }
@@ -70,11 +70,11 @@ class CallbackFactoryTest extends TestCase
     public function testCreatesDelegatorFactoryCallbackFromCallable()
     {
         $container = new Container();
-        $factoryCallback = function() {
+        $factoryCallback = function () {
             return new \stdClass();
         };
 
-        $callable = function(ContainerInterface $container, $requestedName, callable $factory) {
+        $callable = function (ContainerInterface $container, $requestedName, callable $factory) {
             if ($requestedName === 'myservice') {
                 $origin = $factory();
                 return new ServiceWithDependency($origin);
@@ -99,7 +99,7 @@ class CallbackFactoryTest extends TestCase
     public function testCreatesDelegatorFactoryCallbackFromInvokableClassName()
     {
         $container = new Container();
-        $factoryCallback = function() {
+        $factoryCallback = function () {
             return new \stdClass();
         };
 
@@ -122,7 +122,8 @@ class CallbackFactoryTest extends TestCase
     public function testCreateDelegatorFactoryCallbackThrowsExceptionForInvalidFactory()
     {
         $container = new Container();
-        $factoryCallback = function() { };
+        $factoryCallback = function () {
+        };
 
         CallbackFactory::createDelegatorFactoryCallback(
             'someInvalidDelegator',

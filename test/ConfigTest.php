@@ -209,11 +209,11 @@ class ConfigTest extends TestCase
     public function testUnexpectedClosureAsDelegatorFactory()
     {
         $dependencies = [
-            'services' => [
-                'randomService' => new InvokableService(),
+            'invokables' => [
+                InvokableService::class => InvokableService::class,
             ],
             'delegators' => [
-                'randomService' => [
+                InvokableService::class => [
                     function () {
                         return new InvokableService();
                     },
@@ -338,6 +338,143 @@ class ConfigTest extends TestCase
 
         $config = new Config(['dependencies' => $dependencies]);
         $this->containerFactory->__invoke($config);
+    }
+
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testDoesNotAcceptDelegatorOnAlias()
+    {
+        $dependencies = [
+            'invokables' => [
+                InvokableService::class => InvokableService::class,
+            ],
+            'aliases' => [
+                'myalias' => InvokableService::class,
+            ],
+            'delegators' => [
+                'myalias' => [
+                    Delegator1::class,
+                ],
+            ],
+        ];
+
+        $builder = new ContainerBuilder();
+        $builder->register(InvokableService::class, InvokableService::class);
+        $builder->setAlias('myalias', InvokableService::class);
+
+        $config = new Config(['dependencies' => $dependencies]);
+        $config->configureContainerBuilder($builder);
+    }
+
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testDoesNotAcceptDelegatorOnRuntimeServices()
+    {
+        $dependencies = [
+            'services' => [
+                InvokableService::class => new InvokableService(),
+            ],
+            'delegators' => [
+                InvokableService::class => [
+                    Delegator1::class,
+                ],
+            ],
+        ];
+
+        $builder = new ContainerBuilder();
+
+        $config = new Config(['dependencies' => $dependencies]);
+        $config->configureContainerBuilder($builder);
+    }
+
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testDoesNotAcceptDelegatorOnUndefinedServices()
+    {
+        $dependencies = [
+            'delegators' => [
+                'myservice' => [
+                    Delegator1::class,
+                ],
+            ],
+        ];
+
+        $builder = new ContainerBuilder();
+
+        $config = new Config(['dependencies' => $dependencies]);
+        $config->configureContainerBuilder($builder);
+    }
+
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testDoesNotAcceptDelegatorOnSyntheticServices()
+    {
+        $dependencies = [
+            'services' => [
+                InvokableService::class => new InvokableService(),
+            ],
+            'delegators' => [
+                InvokableService::class => [
+                    Delegator1::class,
+                ],
+            ],
+        ];
+
+        $config = new Config(['dependencies' => $dependencies], true);
+        $this->containerFactory->__invoke($config);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testCreatesPrivateDelegatorForPublicAliasedPrivateServices()
+    {
+        $builder = new ContainerBuilder();
+
+        //Given a private service with id InvokableService::class
+        $serviceDefinition = $builder
+            ->register(InvokableService::class, InvokableService::class)
+            ->setPublic(false)
+            ->setPrivate(true);
+
+        //Given a public alias 'myalias' to InvokableService::class service id
+        $builder
+            ->setAlias('myalias', InvokableService::class)
+            ->setPublic(true);
+
+        $dependencies = [
+            'delegators' => [
+                InvokableService::class => [
+                    //Wraps the InvokableService in a ServiceWithDependency object
+                    Delegator1::class,
+                ],
+            ],
+        ];
+
+        $config = new Config(['dependencies' => $dependencies]);
+        $config->configureContainerBuilder($builder);
+
+        $this->assertTrue($builder->hasDefinition(InvokableService::class));
+
+        $definition = $builder->getDefinition(InvokableService::class);
+
+        $this->assertEquals($serviceDefinition->isPublic(), $definition->isPublic());
+        $this->assertEquals($serviceDefinition->isPrivate(), $definition->isPrivate());
+
+        $builder->compile();
+
+        $this->assertFalse($builder->has(InvokableService::class));
+        $this->assertTrue($builder->has('myalias'));
+
+        /** @var ServiceWithDependency $service */
+        $service = $builder->get('myalias');
+
+        $this->assertInstanceOf(ServiceWithDependency::class, $service);
+        $this->assertInstanceOf(InvokableService::class, $service->getDependency());
     }
 
     public function testAlias()

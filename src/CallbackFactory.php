@@ -94,18 +94,22 @@ class CallbackFactory
     ) {
         if (is_callable($delegator)) {
             return static::createDelegatorFactoryCallbackFromCallable(
+                // @codeCoverageIgnoreStart
                 $delegator,
                 $container,
                 $requestedName,
+                // @codeCoverageIgnoreEnd
                 $factoryCallback
             );
         }
 
         if (is_string($delegator) && class_exists($delegator)) {
             return static::createDelegatorFactoryCallbackFromName(
+                // @codeCoverageIgnoreStart
                 $delegator,
                 $container,
                 $requestedName,
+                // @codeCoverageIgnoreEnd
                 $factoryCallback
             );
         }
