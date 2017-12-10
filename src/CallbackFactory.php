@@ -121,7 +121,7 @@ class CallbackFactory
      *
      * @return \Closure
      */
-    public static function createDelegatorFactoryCallbackFromName(
+    protected static function createDelegatorFactoryCallbackFromName(
         $delegatorName,
         ContainerInterface $container,
         $requestedName,
