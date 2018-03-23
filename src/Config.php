@@ -35,7 +35,7 @@ class Config implements ConfigInterface
     /**
      * @inheritdoc
      */
-    public function configureContainerBuilder(ContainerBuilder $builder): void
+    public function configureContainerBuilder(ContainerBuilder $builder)
     {
         $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
         $builder->set('config', $config);

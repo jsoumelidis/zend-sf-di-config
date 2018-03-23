@@ -9,5 +9,5 @@ interface ConfigInterface
     /**
      * @param ContainerBuilder $builder
      */
-    public function configureContainerBuilder(ContainerBuilder $builder): void;
+    public function configureContainerBuilder(ContainerBuilder $builder);
 }
