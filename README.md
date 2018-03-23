@@ -82,3 +82,30 @@ $factory = new ContainerFactory();
 
 return $factory(new Config($config));
 ```
+
+## Pre-configuring the ContainerBuilder
+
+One can pass an already instantiated ContainerBuilder as 2nd argument
+to ContainerBuilder
+
+```php
+<?php
+
+use JSoumelidis\SymfonyDI\Config\Config;
+use JSoumelidis\SymfonyDI\Config\ContainerFactory;
+
+$config  = require __DIR__ . '/config.php';
+
+$containerBuilder = new \Symfony\Component\DependencyInjection\ContainerBuilder();
+
+//...Some work here...
+
+$factory = new ContainerFactory();
+$factory(new Config($config), $containerBuilder);
+
+//Maybe you'll wish to compile the container and dump (cache) it
+$containerBuilder->compile();
+...
+
+return $containerBuilder;
+```
