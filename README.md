@@ -49,7 +49,9 @@ The `dependencies` sub associative array can contain the following keys:
   The key and service name may be the same; if they are not, the name is treated
   as an alias.
 - `factories`: an associative array that maps a service name to a factory class
-  name, or any callable. Factory classes must be instantiable without arguments,
+  name or a callable function name or a static method callable string or array. Closures,
+  objects implementing __invoke() method and callables of type [(object), 'method']
+  are currently not supported. Factory classes must be instantiable without arguments,
   and callable once instantiated (i.e., implement the `__invoke()` method).
 - `aliases`: an associative array that maps an alias to a service name (or
   another alias).
