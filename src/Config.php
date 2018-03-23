@@ -4,6 +4,7 @@ namespace JSoumelidis\SymfonyDI\Config;
 
 use Closure;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
 use Zend\ContainerConfigTest\DelegatorTestTrait;
@@ -41,7 +42,7 @@ class Config implements ConfigInterface
                 foreach ($dependencies['services'] as $name => $object) {
                     if ($this->servicesAsSynthetic) {
                         $type = is_object($object) ? get_class($object) : gettype($object);
-                        $builder->register($name, $type)->setSynthetic(true);
+                        $builder->register($name, $type)->setSynthetic(true)->setPublic(true);
                     } else {
                         $builder->set($name, $object);
                     }
@@ -63,11 +64,9 @@ class Config implements ConfigInterface
                      * @see InvokableTestTrait::testFetchingNonExistingInvokableServiceResultsInException
                      */
                     if (! class_exists($invokable)) {
-                        $builder->register($invokable, $invokable)
-                            ->setFactory([DangerFactory::class, 'create'])
-                            ->setArguments([new Reference('service_container'), $name]);
+                        $this->registerWrapperForService($invokable, $builder);
                     } else {
-                        $builder->register($invokable, $invokable);
+                        $builder->register($invokable, $invokable)->setPublic(true);
                     }
 
                     /**
@@ -76,7 +75,7 @@ class Config implements ConfigInterface
                      * @see InvokableTestTrait::testCanFetchInvokableByBothAliasAndClassName
                      */
                     if ($name !== $invokable) {
-                        $builder->setAlias($name, $invokable);
+                        $builder->setAlias($name, $invokable)->setPublic(true);
                     }
                 }
             }
@@ -90,8 +89,15 @@ class Config implements ConfigInterface
 
             //Inject aliases
             if (! empty($dependencies['aliases']) && is_array($dependencies['aliases'])) {
-                foreach ($dependencies['aliases'] as $alias => $name) {
-                    $builder->setAlias($alias, $name);
+                foreach ($dependencies['aliases'] as $alias => $target) {
+                    //Compiler: Aliasing an actual service requires synthetic definition
+                    if (isset($dependencies['services'][$target]) && ! $builder->hasDefinition($target)) {
+                        $builder->register($target, is_object($target) ? get_class($target) : gettype($target))
+                            ->setSynthetic(true)
+                            ->setPublic(true);
+                    }
+
+                    $builder->setAlias($alias, $target)->setPublic(true);
                 }
             }
 
@@ -113,7 +119,7 @@ class Config implements ConfigInterface
      *
      * @return string
      */
-    protected function zendSmSfDiBridgeCreateId($name)
+    protected function zendSmSfDiBridgeCreateId($name): string
     {
         return "smsfbridge.{$name}";
     }
@@ -127,7 +133,7 @@ class Config implements ConfigInterface
      *
      * @return void
      */
-    protected function injectFactory($id, $factory, ContainerBuilder $builder)
+    protected function injectFactory($id, $factory, ContainerBuilder $builder): void
     {
         if (is_callable($factory)) {
             if ($factory instanceof Closure) {
@@ -145,7 +151,8 @@ class Config implements ConfigInterface
             $builder->register($id, $id)
                 ->setFactory($factory)
                 //Zend ServiceManager FactoryInterface arguments
-                ->setArguments([new Reference('service_container'), $id]);
+                ->setArguments([new Reference('service_container'), $id])
+                ->setPublic(true);
 
             return;
         }
@@ -175,7 +182,8 @@ class Config implements ConfigInterface
             );
 
         $builder->register($id, $id)
-            ->setFactory([new Reference($factoryCallbackId), '__invoke']);
+            ->setFactory([new Reference($factoryCallbackId), '__invoke'])
+            ->setPublic(true);
     }
 
     /**
@@ -187,7 +195,7 @@ class Config implements ConfigInterface
      *
      * @return void
      */
-    protected function injectDelegators($id, array $delegators, ContainerBuilder $builder)
+    protected function injectDelegators($id, array $delegators, ContainerBuilder $builder): void
     {
         if ($builder->hasAlias($id)) {
             /**
@@ -205,24 +213,24 @@ class Config implements ConfigInterface
 
         if (! $builder->hasDefinition($id)) {
             /**
-             * Delegators for services are ignored
+             * Delegators for [synthetic] services are ignored
              *
              * @see DelegatorTestTrait::testDelegatorsDoNotOperateOnServices
              */
-            return;
-            /*
+            if ($builder->has($id)) {
+                return;
+            }
+
             throw new UnexpectedValueException(
-                "Delegators for undefined/runtime services are not supported ({$id})"
+                "Delegators for undefined services are not supported ({$id})"
             );
-            */
         }
 
         $definition = $builder->getDefinition($id);
 
+        //Silently ignore delegators for synthetic definitions
         if ($definition->isSynthetic()) {
-            throw new UnexpectedValueException(
-                "Delegators for synthetic services are not supported ({$id})"
-            );
+            return;
         }
 
         //we will rename the original service's id to something 'private'
@@ -290,8 +298,37 @@ class Config implements ConfigInterface
         //This action removes any previous alias registered for $id
         $builder
             ->register($id, $definition->getClass())
-            ->setPublic($definition->isPublic())
-            ->setShared($definition->isShared())
-            ->setFactory([new Reference($factoryCallbackId), '__invoke']);
+            ->setFactory([new Reference($factoryCallbackId), '__invoke'])
+            ->setPublic($definition->isPublic());
+    }
+
+    /**
+     * @param string $invokable
+     * @param ContainerBuilder $builder
+     * @param string|null $prefix
+     *
+     * @return void
+     */
+    private function registerWrapperForService(
+        string $invokable,
+        ContainerBuilder $builder,
+        string $prefix = null
+    ): void
+    {
+        $wrapperId = $prefix
+            ? $this->zendSmSfDiBridgeCreateId("{$invokable}.{$prefix}.wrapper")
+            : $this->zendSmSfDiBridgeCreateId("{$invokable}.wrapper");
+
+        $builder->register($wrapperId, $invokable)->setPublic(true);
+
+        $wrapperFactoryId = "{$wrapperId}.factory";
+        $builder->register($wrapperFactoryId, Closure::class)
+            ->setFactory([CallbackFactory::class, 'createCallback'])
+            ->setArguments([new Reference('service_container'), $wrapperId])
+            ->setPublic(false);
+
+        $builder->register($invokable, $invokable)
+            ->setFactory([new Reference($wrapperFactoryId), '__invoke'])
+            ->setPublic(true);
     }
 }

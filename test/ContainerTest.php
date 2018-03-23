@@ -28,8 +28,13 @@ class ContainerTest extends \Zend\ContainerConfigTest\ContainerTest
     protected function createContainer(array $config) : ContainerInterface
     {
         $factory = new ContainerFactory();
-//$this->testFactoryIsProvidedContainerAndServiceNameAsArguments()
-        return $factory(new Config(['dependencies' => $config]));
+
+        $container = $factory(new Config(['dependencies' => $config]));
+
+        //Everything should work with compiled container also
+        $container->compile();
+
+        return $container;
     }
 
     final public function factoryWithName() : Generator

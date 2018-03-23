@@ -103,4 +103,12 @@ class CallbackFactoryTest extends TestCase
         $this->assertInstanceOf(Delegator::class, $object = $callback());
         $this->assertInstanceOf(\Closure::class, $object->callback);
     }
+
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testRaisesExceptionForInvalidFactoryCallback()
+    {
+        CallbackFactory::createFactoryCallback([], new Container(), 'random');
+    }
 }
