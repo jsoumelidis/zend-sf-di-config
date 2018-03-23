@@ -323,7 +323,9 @@ class Config implements ConfigInterface
         string $prefix = null
     ): void {
         $wrapperId = $prefix
+            //@codeCoverageIgnoreStart
             ? $this->zendSmSfDiBridgeCreateId("{$invokable}.{$prefix}.wrapper")
+            //@codeCoverageIgnoreEnd
             : $this->zendSmSfDiBridgeCreateId("{$invokable}.wrapper");
 
         $builder->register($wrapperId, $invokable)->setPublic(true);
