@@ -86,7 +86,7 @@ return $factory(new Config($config));
 ## Pre-configuring the ContainerBuilder
 
 One can pass an already instantiated ContainerBuilder as 2nd argument
-to ContainerBuilder
+to ContainerFactory
 
 ```php
 <?php
