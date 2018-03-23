@@ -3,13 +3,13 @@
 namespace JSoumelidisTest\SymfonyDI\Config;
 
 use JSoumelidis\SymfonyDI\Config\CallbackFactory;
-use JSoumelidisTest\SymfonyDI\Config\Factory\Delegator1;
-use JSoumelidisTest\SymfonyDI\Config\Factory\InvokableServiceFactory;
-use JSoumelidisTest\SymfonyDI\Config\Service\InvokableService;
-use JSoumelidisTest\SymfonyDI\Config\Service\ServiceWithDependency;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\Container;
+use Zend\ContainerConfigTest\TestAsset\Delegator;
+use Zend\ContainerConfigTest\TestAsset\DelegatorFactory;
+use Zend\ContainerConfigTest\TestAsset\Factory;
+use Zend\ContainerConfigTest\TestAsset\Service;
 
 class CallbackFactoryTest extends TestCase
 {
@@ -48,23 +48,13 @@ class CallbackFactoryTest extends TestCase
         $container = new Container();
 
         $callback = CallbackFactory::createFactoryCallback(
-            InvokableServiceFactory::class,
+            Factory::class,
             $container,
             'myservice'
         );
 
         $this->assertInstanceOf(\Closure::class, $callback);
-        $this->assertInstanceOf(InvokableService::class, $callback());
-    }
-
-    /**
-     * @expectedException \UnexpectedValueException
-     */
-    public function testCreateFactoryCallbackThrowsExceptionForInvalidFactory()
-    {
-        $container = new Container();
-
-        CallbackFactory::createFactoryCallback('someInvalidFactory', $container, 'someName');
+        $this->assertInstanceOf(Service::class, $callback());
     }
 
     public function testCreatesDelegatorFactoryCallbackFromCallable()
@@ -77,7 +67,7 @@ class CallbackFactoryTest extends TestCase
         $callable = function (ContainerInterface $container, $requestedName, callable $factory) {
             if ($requestedName === 'myservice') {
                 $origin = $factory();
-                return new ServiceWithDependency($origin);
+                return (object)['origin' => $origin];
             }
 
             throw new \UnexpectedValueException();
@@ -91,9 +81,8 @@ class CallbackFactoryTest extends TestCase
         );
 
         $this->assertInstanceOf(\Closure::class, $callback);
-        $this->assertInstanceOf(ServiceWithDependency::class, $object = $callback());
-        /** @var ServiceWithDependency $object */
-        $this->assertThat($object->getDependency(), $this->isType('object'));
+        $this->assertInstanceOf(\stdClass::class, $object = $callback());
+        $this->assertInstanceOf(\stdClass::class, $object->origin);
     }
 
     public function testCreatesDelegatorFactoryCallbackFromInvokableClassName()
@@ -104,32 +93,14 @@ class CallbackFactoryTest extends TestCase
         };
 
         $callback = CallbackFactory::createDelegatorFactoryCallback(
-            Delegator1::class,
+            DelegatorFactory::class,
             $container,
             'myservice',
             $factoryCallback
         );
 
         $this->assertInstanceOf(\Closure::class, $callback);
-        $this->assertInstanceOf(ServiceWithDependency::class, $object = $callback());
-        /** @var ServiceWithDependency $object */
-        $this->assertThat($object->getDependency(), $this->isType('object'));
-    }
-
-    /**
-     * @expectedException \UnexpectedValueException
-     */
-    public function testCreateDelegatorFactoryCallbackThrowsExceptionForInvalidFactory()
-    {
-        $container = new Container();
-        $factoryCallback = function () {
-        };
-
-        CallbackFactory::createDelegatorFactoryCallback(
-            'someInvalidDelegator',
-            $container,
-            'someName',
-            $factoryCallback
-        );
+        $this->assertInstanceOf(Delegator::class, $object = $callback());
+        $this->assertInstanceOf(\Closure::class, $object->callback);
     }
 }

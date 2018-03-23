@@ -6,6 +6,7 @@ use Closure;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
+use Zend\ContainerConfigTest\DelegatorTestTrait;
 
 class Config implements ConfigInterface
 {
@@ -50,7 +51,33 @@ class Config implements ConfigInterface
             //Inject invokable services
             if (! empty($dependencies['invokables']) && is_array($dependencies['invokables'])) {
                 foreach ($dependencies['invokables'] as $name => $invokable) {
-                    $builder->register($name, $invokable);
+                    /** @see \Zend\ContainerConfigTest\InvokableTestTrait::testCanSpecifyInvokableWithoutKey */
+                    if (! is_string($name)) {
+                        $name = $invokable;
+                    }
+
+                    //As Zend team proposes: all invokables must be registered by their actual class name
+
+                    /**
+                     * Workaround for
+                     * @see InvokableTestTrait::testFetchingNonExistingInvokableServiceResultsInException
+                     */
+                    if (! class_exists($invokable)) {
+                        $builder->register($invokable, $invokable)
+                            ->setFactory([DangerFactory::class, 'create'])
+                            ->setArguments([new Reference('service_container'), $name]);
+                    } else {
+                        $builder->register($invokable, $invokable);
+                    }
+
+                    /**
+                     * If service name does not match the class name, we create an alias
+                     *
+                     * @see InvokableTestTrait::testCanFetchInvokableByBothAliasAndClassName
+                     */
+                    if ($name !== $invokable) {
+                        $builder->setAlias($name, $invokable);
+                    }
                 }
             }
 
@@ -123,7 +150,7 @@ class Config implements ConfigInterface
             return;
         }
 
-        if (! is_string($factory) || ! class_exists($factory)) {
+        if (! is_string($factory)) {
             throw new UnexpectedValueException(
                 "This bridge supports callables or invokable class names as factories"
             );
@@ -163,15 +190,31 @@ class Config implements ConfigInterface
     protected function injectDelegators($id, array $delegators, ContainerBuilder $builder)
     {
         if ($builder->hasAlias($id)) {
+            /**
+             * Delegators for aliases are ignored
+             *
+             * @see DelegatorTestTrait::testDelegatorsNamedForAliasDoNotApplyToInvokableServiceWithAlias
+             */
+            return;
+            /*
             throw new UnexpectedValueException(
                 "Delegators for aliases are not supported ({$id})"
             );
+            */
         }
 
         if (! $builder->hasDefinition($id)) {
+            /**
+             * Delegators for services are ignored
+             *
+             * @see DelegatorTestTrait::testDelegatorsDoNotOperateOnServices
+             */
+            return;
+            /*
             throw new UnexpectedValueException(
                 "Delegators for undefined/runtime services are not supported ({$id})"
             );
+            */
         }
 
         $definition = $builder->getDefinition($id);
@@ -217,7 +260,9 @@ class Config implements ConfigInterface
                         "This bridge supports only PHP functions or static methods as callable delegator factories"
                     );
                 }
-            } elseif (! is_string($delegator) || ! class_exists($delegator)) {
+            } elseif (! is_string($delegator)/* || ! class_exists($delegator)*/) { //Non-existent classes expect to
+                                                                                   //throw exception on service
+                                                                                   //retrieval
                 throw new UnexpectedValueException(
                     "This bridge supports callables or invokable class names as delegator factories"
                 );

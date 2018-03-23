@@ -16,7 +16,14 @@ class CallbackFactory
     public static function createCallback(ContainerInterface $container, $requestedName)
     {
         return function () use ($container, $requestedName) {
-            return $container->get($requestedName);
+            /**
+             * @see DelegatorTestTrait::testWithDelegatorsResolvesToInvalidClassAnExceptionIsRaisedWhenCallbackIsInvoked
+             */
+            try {
+                return $container->get($requestedName);
+            } catch (\ReflectionException $e) {
+                throw new Exception\ServiceNotFoundException($e->getMessage(), 0, $e);
+            }
         };
     }
 
@@ -36,7 +43,7 @@ class CallbackFactory
             return static::createFactoryCallbackFromCallable($factory, $container, $requestedName);
         }
 
-        if (is_string($factory) && class_exists($factory)) {
+        if (is_string($factory)) {
             return static::createFactoryCallbackFromName($factory, $container, $requestedName);
         }
 
@@ -73,7 +80,13 @@ class CallbackFactory
         $requestedName
     ) {
         return function () use ($factory, $container, $requestedName) {
-            $factory = new $factory;
+            if (! class_exists($factory) || ! is_callable($factory = new $factory)) {
+                throw new Exception\ServiceNotFoundException(sprintf(
+                    'Factory class %s not found or not callable',
+                    is_string($factory) ? $factory : get_class($factory)
+                ));
+            }
+
             return $factory($container, $requestedName);
         };
     }
@@ -85,6 +98,8 @@ class CallbackFactory
      * @param callable $factoryCallback
      *
      * @return \Closure
+     *
+     * @throws Exception\ServiceNotFoundException
      */
     public static function createDelegatorFactoryCallback(
         $delegator,
@@ -114,7 +129,10 @@ class CallbackFactory
             );
         }
 
-        throw new UnexpectedValueException('Expected a callable or a valid class name');
+        throw new Exception\ServiceNotFoundException(sprintf(
+            'Invalid delegator for service %s',
+            $requestedName
+        ));
     }
 
     /**
@@ -133,6 +151,14 @@ class CallbackFactory
     ) {
         return function () use ($delegatorName, $container, $requestedName, $factoryCallback) {
             $delegator = new $delegatorName;
+
+            if (! is_callable($delegator)) {
+                throw new Exception\ServiceNotFoundException(sprintf(
+                    'Delegator class %s is not callable',
+                    $delegatorName
+                ));
+            }
+
             return $delegator($container, $requestedName, $factoryCallback);
         };
     }
