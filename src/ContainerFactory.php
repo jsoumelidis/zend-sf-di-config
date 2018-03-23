@@ -2,7 +2,6 @@
 
 namespace JSoumelidis\SymfonyDI\Config;
 
-use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class ContainerFactory
@@ -13,7 +12,7 @@ class ContainerFactory
      *
      * @return ContainerBuilder
      */
-    public function __invoke(ConfigInterface $config, ContainerBuilder $builder = null)
+    public function __invoke(ConfigInterface $config, ContainerBuilder $builder = null): ContainerBuilder
     {
         if (null === $builder) {
             $builder = new ContainerBuilder();

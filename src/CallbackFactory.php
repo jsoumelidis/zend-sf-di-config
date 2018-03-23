@@ -12,8 +12,10 @@ class CallbackFactory
      * @param string $requestedName
      *
      * @return \Closure
+     *
+     * @throws Exception\ServiceNotFoundException
      */
-    public static function createCallback(ContainerInterface $container, $requestedName)
+    public static function createCallback(ContainerInterface $container, string $requestedName): \Closure
     {
         return function () use ($container, $requestedName) {
             /**
@@ -21,8 +23,8 @@ class CallbackFactory
              */
             try {
                 return $container->get($requestedName);
-            } catch (\ReflectionException $e) {
-                throw new Exception\ServiceNotFoundException($e->getMessage(), 0, $e);
+            } catch (\Throwable $e) {
+                throw Exception\ServiceNotFoundException::create($e->getMessage(), $e);
             }
         };
     }
@@ -33,12 +35,14 @@ class CallbackFactory
      * @param string $requestedName
      *
      * @return \Closure
+     *
+     * @throws UnexpectedValueException
      */
     public static function createFactoryCallback(
         $factory,
         ContainerInterface $container,
-        $requestedName
-    ) {
+        string $requestedName
+    ): \Closure {
         if (is_callable($factory)) {
             return static::createFactoryCallbackFromCallable($factory, $container, $requestedName);
         }
@@ -60,8 +64,8 @@ class CallbackFactory
     protected static function createFactoryCallbackFromCallable(
         callable $callable,
         ContainerInterface $container,
-        $requestedName
-    ) {
+        string $requestedName
+    ): \Closure {
         return function () use ($callable, $container, $requestedName) {
             return $callable($container, $requestedName);
         };
@@ -75,13 +79,13 @@ class CallbackFactory
      * @return \Closure
      */
     protected static function createFactoryCallbackFromName(
-        $factory,
+        string $factory,
         ContainerInterface $container,
-        $requestedName
-    ) {
+        string $requestedName
+    ): \Closure {
         return function () use ($factory, $container, $requestedName) {
             if (! class_exists($factory) || ! is_callable($factory = new $factory)) {
-                throw new Exception\ServiceNotFoundException(sprintf(
+                throw Exception\ServiceNotFoundException::create(sprintf(
                     'Factory class %s not found or not callable',
                     is_string($factory) ? $factory : get_class($factory)
                 ));
@@ -104,9 +108,9 @@ class CallbackFactory
     public static function createDelegatorFactoryCallback(
         $delegator,
         ContainerInterface $container,
-        $requestedName,
+        string $requestedName,
         callable $factoryCallback
-    ) {
+    ): \Closure {
         if (is_callable($delegator)) {
             return static::createDelegatorFactoryCallbackFromCallable(
                 // @codeCoverageIgnoreStart
@@ -129,7 +133,7 @@ class CallbackFactory
             );
         }
 
-        throw new Exception\ServiceNotFoundException(sprintf(
+        throw Exception\ServiceNotFoundException::create(sprintf(
             'Invalid delegator for service %s',
             $requestedName
         ));
@@ -144,16 +148,16 @@ class CallbackFactory
      * @return \Closure
      */
     protected static function createDelegatorFactoryCallbackFromName(
-        $delegatorName,
+        string $delegatorName,
         ContainerInterface $container,
-        $requestedName,
+        string $requestedName,
         callable $factoryCallback
-    ) {
+    ): \Closure {
         return function () use ($delegatorName, $container, $requestedName, $factoryCallback) {
             $delegator = new $delegatorName;
 
             if (! is_callable($delegator)) {
-                throw new Exception\ServiceNotFoundException(sprintf(
+                throw Exception\ServiceNotFoundException::create(sprintf(
                     'Delegator class %s is not callable',
                     $delegatorName
                 ));
@@ -174,9 +178,9 @@ class CallbackFactory
     protected static function createDelegatorFactoryCallbackFromCallable(
         callable $callable,
         ContainerInterface $container,
-        $requestedName,
+        string $requestedName,
         callable $factoryCallback
-    ) {
+    ): \Closure {
         return function () use ($callable, $container, $requestedName, $factoryCallback) {
             //PHP 5.6 fix
             return call_user_func($callable, $container, $requestedName, $factoryCallback);

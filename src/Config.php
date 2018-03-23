@@ -4,7 +4,6 @@ namespace JSoumelidis\SymfonyDI\Config;
 
 use Closure;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
 use Zend\ContainerConfigTest\DelegatorTestTrait;
@@ -21,13 +20,22 @@ class Config implements ConfigInterface
      */
     private $servicesAsSynthetic;
 
+    /**
+     * Config constructor.
+     *
+     * @param array $config
+     * @param bool $servicesAsSynthetic
+     */
     public function __construct(array $config, $servicesAsSynthetic = false)
     {
         $this->config = $config;
         $this->servicesAsSynthetic = (bool)$servicesAsSynthetic;
     }
 
-    public function configureContainerBuilder(ContainerBuilder $builder)
+    /**
+     * @inheritdoc
+     */
+    public function configureContainerBuilder(ContainerBuilder $builder): void
     {
         $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
         $builder->set('config', $config);
@@ -119,7 +127,7 @@ class Config implements ConfigInterface
      *
      * @return string
      */
-    protected function zendSmSfDiBridgeCreateId($name): string
+    protected function zendSmSfDiBridgeCreateId(string $name): string
     {
         return "smsfbridge.{$name}";
     }
@@ -133,7 +141,7 @@ class Config implements ConfigInterface
      *
      * @return void
      */
-    protected function injectFactory($id, $factory, ContainerBuilder $builder): void
+    protected function injectFactory(string $id, $factory, ContainerBuilder $builder): void
     {
         if (is_callable($factory)) {
             if ($factory instanceof Closure) {
@@ -195,7 +203,7 @@ class Config implements ConfigInterface
      *
      * @return void
      */
-    protected function injectDelegators($id, array $delegators, ContainerBuilder $builder): void
+    protected function injectDelegators(string $id, array $delegators, ContainerBuilder $builder): void
     {
         if ($builder->hasAlias($id)) {
             /**
@@ -313,8 +321,7 @@ class Config implements ConfigInterface
         string $invokable,
         ContainerBuilder $builder,
         string $prefix = null
-    ): void
-    {
+    ): void {
         $wrapperId = $prefix
             ? $this->zendSmSfDiBridgeCreateId("{$invokable}.{$prefix}.wrapper")
             : $this->zendSmSfDiBridgeCreateId("{$invokable}.wrapper");

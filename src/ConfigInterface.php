@@ -6,5 +6,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 interface ConfigInterface
 {
-    public function configureContainerBuilder(ContainerBuilder $builder);
+    /**
+     * @param ContainerBuilder $builder
+     */
+    public function configureContainerBuilder(ContainerBuilder $builder): void;
 }

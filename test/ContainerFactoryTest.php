@@ -23,7 +23,7 @@ class ContainerFactoryTest extends TestCase
         $this->factory = new ContainerFactory();
     }
 
-    public function testFactoryCreatesPsr11Container()
+    public function testFactoryCreatesPsr11Container(): void
     {
         $factory = $this->factory;
 
@@ -33,15 +33,14 @@ class ContainerFactoryTest extends TestCase
         $this->assertInstanceOf(ContainerInterface::class, $container);
     }
 
-    public function testContainerIsConfigured()
+    public function testContainerIsConfigured(): void
     {
         $factory = $this->factory;
 
         $config = $this->prophesize(ConfigInterface::class);
         $config
             ->configureContainerBuilder(Argument::type(ContainerBuilder::class))
-            ->shouldBeCalledTimes(1)
-            ->willReturn(null);
+            ->shouldBeCalledTimes(1);
 
         $factory($config->reveal());
     }

@@ -13,7 +13,7 @@ use Zend\ContainerConfigTest\TestAsset\Service;
 
 class CallbackFactoryTest extends TestCase
 {
-    public function testCreatesContainerCallback()
+    public function testCreatesContainerCallback(): void
     {
         $service = new \stdClass();
         $container = new Container();
@@ -26,7 +26,7 @@ class CallbackFactoryTest extends TestCase
         $this->assertEquals($service, $callback());
     }
 
-    public function testCreatesFactoryCallbackFromCallable()
+    public function testCreatesFactoryCallbackFromCallable(): void
     {
         $container = new Container();
         $callable = function (ContainerInterface $container, $requestedName) {
@@ -43,7 +43,7 @@ class CallbackFactoryTest extends TestCase
         $this->assertThat($callback(), $this->isType('object'));
     }
 
-    public function testCreatesFactoryCallbackFromInvokableClassName()
+    public function testCreatesFactoryCallbackFromInvokableClassName(): void
     {
         $container = new Container();
 
@@ -57,7 +57,7 @@ class CallbackFactoryTest extends TestCase
         $this->assertInstanceOf(Service::class, $callback());
     }
 
-    public function testCreatesDelegatorFactoryCallbackFromCallable()
+    public function testCreatesDelegatorFactoryCallbackFromCallable(): void
     {
         $container = new Container();
         $factoryCallback = function () {
@@ -85,7 +85,7 @@ class CallbackFactoryTest extends TestCase
         $this->assertInstanceOf(\stdClass::class, $object->origin);
     }
 
-    public function testCreatesDelegatorFactoryCallbackFromInvokableClassName()
+    public function testCreatesDelegatorFactoryCallbackFromInvokableClassName(): void
     {
         $container = new Container();
         $factoryCallback = function () {
@@ -107,7 +107,7 @@ class CallbackFactoryTest extends TestCase
     /**
      * @expectedException \UnexpectedValueException
      */
-    public function testRaisesExceptionForInvalidFactoryCallback()
+    public function testRaisesExceptionForInvalidFactoryCallback(): void
     {
         CallbackFactory::createFactoryCallback([], new Container(), 'random');
     }

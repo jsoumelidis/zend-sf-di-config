@@ -28,7 +28,7 @@ class ConfigTest extends TestCase
         $this->containerFactory = new ContainerFactory();
     }
 
-    public function testServicesAsSyntheticRegister()
+    public function testServicesAsSyntheticRegister(): void
     {
         $dependencies = [
             'services' => [
@@ -46,7 +46,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException \Exception
      */
-    public function testServicesAsSyntheticCannotBeFetched()
+    public function testServicesAsSyntheticCannotBeFetched(): void
     {
         $dependencies = [
             'services' => [
@@ -62,7 +62,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedValueAsFactory()
+    public function testUnexpectedValueAsFactory(): void
     {
         $dependencies = [
             'factories' => [
@@ -77,7 +77,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedClosureAsFactory()
+    public function testUnexpectedClosureAsFactory(): void
     {
         $dependencies = [
             'factories' => [
@@ -94,7 +94,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedObjectMethodAsFactory()
+    public function testUnexpectedObjectMethodAsFactory(): void
     {
         $object = new Factory();
 
@@ -108,7 +108,7 @@ class ConfigTest extends TestCase
         $this->containerFactory->__invoke($config);
     }
 
-    public function testStaticMethodCallAsDelegatorFactory()
+    public function testStaticMethodCallAsDelegatorFactory(): void
     {
         $dependencies = [
             'invokables' => [
@@ -133,7 +133,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedValueAsDelegatorFactory()
+    public function testUnexpectedValueAsDelegatorFactory(): void
     {
         $dependencies = [
             'invokables' => [
@@ -153,7 +153,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedClosureAsDelegatorFactory()
+    public function testUnexpectedClosureAsDelegatorFactory(): void
     {
         $dependencies = [
             'invokables' => [
@@ -175,7 +175,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testUnexpectedObjectMethodAsDelegatorFactory()
+    public function testUnexpectedObjectMethodAsDelegatorFactory(): void
     {
         $object = new DelegatorFactory();
 
@@ -197,7 +197,7 @@ class ConfigTest extends TestCase
     /**
      * @expectedException \UnexpectedValueException
      */
-    public function testDoesNotAcceptDelegatorOnUndefinedServices()
+    public function testDoesNotAcceptDelegatorOnUndefinedServices(): void
     {
         $dependencies = [
             'delegators' => [
@@ -216,7 +216,7 @@ class ConfigTest extends TestCase
     /**
      * @throws \Exception
      */
-    public function testCreatesPrivateDelegatorForPublicAliasedPrivateServices()
+    public function testCreatesPrivateDelegatorForPublicAliasedPrivateServices(): void
     {
         $builder = new ContainerBuilder();
 
