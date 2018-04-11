@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "46402e29348ad468046a0704a1a64c4e",
+    "content-hash": "d470ecc811ec806fc527baca9add5814",
     "packages": [
         {
             "name": "psr/container",
@@ -1691,11 +1691,17 @@
         },
         {
             "name": "zendframework/zend-container-config-test",
-            "version": "dev-improvements",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/webimpress/zend-container-config-test",
-                "reference": "42a8f7461598d458d7042f47f6d5810c33735e21"
+                "url": "https://github.com/zendframework/zend-container-config-test.git",
+                "reference": "64a73e2cfc12cb07103e8936dfb25c136ba0496f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/zendframework/zend-container-config-test/zipball/64a73e2cfc12cb07103e8936dfb25c136ba0496f",
+                "reference": "64a73e2cfc12cb07103e8936dfb25c136ba0496f",
+                "shasum": ""
             },
             "require": {
                 "php": "^7.1",
@@ -1723,56 +1729,25 @@
                     "Zend\\ContainerConfigTest\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "ZendTest\\ContainerConfigTest\\": "test/"
-                }
-            },
-            "scripts": {
-                "check": [
-                    "@cs-check",
-                    "@test"
-                ],
-                "cs-check": [
-                    "phpcs"
-                ],
-                "cs-fix": [
-                    "phpcbf"
-                ],
-                "test": [
-                    "phpunit --colors=always"
-                ],
-                "test-coverage": [
-                    "phpunit --colors=always --coverage-clover clover.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "BSD-3-Clause"
             ],
             "description": "Expressive PSR-11 container configuration tests",
             "keywords": [
+                "PSR-11",
+                "ZendFramework",
                 "container",
                 "expressive",
-                "psr-11",
                 "test",
-                "zendframework",
                 "zf"
             ],
-            "support": {
-                "issues": "https://github.com/zendframework/zend-container-config-test/issues",
-                "source": "https://github.com/zendframework/zend-container-config-test",
-                "rss": "https://github.com/zendframework/zend-container-config-test/releases.atom",
-                "slack": "https://zendframework-slack.herokuapp.com",
-                "forum": "https://discourse.zendframework.com/c/questions/expressive"
-            },
-            "time": "2018-04-11T13:06:58+00:00"
+            "time": "2018-04-11T14:09:33+00:00"
         }
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "zendframework/zend-container-config-test": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
