@@ -141,6 +141,8 @@ if (file_exists($cachedContainerFile)) {
     
     //Config must be set again as a service separately
     $container->set('config', new ArrayObject($config));
+    
+    return $container;
 }
 
 $container = $factory(new Config($config, true)); //set 2nd argument to true while
@@ -149,4 +151,5 @@ $container = $factory(new Config($config, true)); //set 2nd argument to true whi
 $container->compile();
 file_put_contents($cachedContainerFile, (new PhpDumper($container))->dump());
 
+return $container;
 ```
