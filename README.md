@@ -48,11 +48,9 @@ The `dependencies` sub associative array can contain the following keys:
   service; i.e., for services that do not require arguments to the constructor.
   The key and service name may be the same; if they are not, the name is treated
   as an alias.
-- `factories`: an associative array that maps a service name to a factory class
-  name or a callable function name or a static method callable string or array. Closures,
-  objects implementing __invoke() method and callables of type [(object), 'method']
-  are currently not supported. Factory classes must be instantiable without arguments,
-  and callable once instantiated (i.e., implement the `__invoke()` method).
+- `factories`: an associative array that maps a service name to a factory class name, 
+  or any callable. Factory classes must be instantiable without arguments, and callable
+  once instantiated (i.e., implement the __invoke() method).
 - `aliases`: an associative array that maps an alias to a service name (or
   another alias).
 - `delegators`: an associative array that maps service names to lists of
@@ -105,7 +103,50 @@ $factory(new Config($config), $containerBuilder);
 
 //Maybe you'll wish to compile the container and dump (cache) it
 $containerBuilder->compile();
-...
+// ... other code
 
 return $containerBuilder;
+```
+
+## Dumping/Caching the Container
+
+If you are planning to use Symfony DI Container's dumping/caching functionality you
+should be aware that Closures, callable objects or callables of type [(object), 'method']
+as factories and/or delegators are not compatible, while php named functions and static method
+callables are perfectly fine.
+
+Services defined in `services` require to be registered as synthetic and re-set once the cached
+container is booted like the following example:
+```php
+<?php
+use JSoumelidis\SymfonyDI\Config\Config;
+use JSoumelidis\SymfonyDI\Config\ContainerFactory;
+use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
+
+$factory = new ContainerFactory();
+
+$config = require __DIR__ . '/config.php';
+$cachedContainerFile = __DIR__ . '/../var/cache/container.php';
+
+if (file_exists($cachedContainerFile)) {
+    //load cached container
+    require_once($cachedContainerFile);
+    
+    $container = new ProjectServiceContainer();
+    
+    //re-set synthetic services
+    foreach ($config['dependencies']['services'] as $id => $service) {
+        $container->set($id, $service);
+    }
+    
+    //Config must be set again as a service separately
+    $container->set('config', new ArrayObject($config));
+}
+
+$container = $factory(new Config($config, true)); //set 2nd argument to true while
+                                                  //instantiating Config to register
+                                                  //services as synthetic
+$container->compile();
+file_put_contents($cachedContainerFile, (new PhpDumper($container))->dump());
+
 ```
