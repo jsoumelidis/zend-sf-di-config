@@ -11,10 +11,8 @@ class CallbackFactory
      * @param string $requestedName
      *
      * @return \Closure
-     *
-     * @throws Exception\ServiceNotFoundException
      */
-    public static function createCallback(ContainerInterface $container, string $requestedName): \Closure
+    public static function createFactoryCallback(ContainerInterface $container, string $requestedName): \Closure
     {
         return function () use ($container, $requestedName) {
             /**
@@ -29,7 +27,7 @@ class CallbackFactory
     }
 
     /**
-     * @param string|callable $factory
+     * @param string $factory
      * @param ContainerInterface $container
      * @param string $requestedName
      *
@@ -37,18 +35,14 @@ class CallbackFactory
      *
      * @throws Exception\ServiceNotFoundException
      */
-    public static function createFactoryCallback(
+    public static function createServiceWithClassFactory(
         $factory,
         ContainerInterface $container,
         string $requestedName
     ) {
-        if (is_callable($factory)) {
-            return $factory($container, $requestedName);
-        }
-
         if (! is_string($factory) || ! class_exists($factory) || ! is_callable($factory = new $factory)) {
             throw Exception\ServiceNotFoundException::create(sprintf(
-                'Factory class %s not found or not callable',
+                'Factory of type %s not found or not callable',
                 is_object($factory) ? get_class($factory) : var_export($factory, true)
             ));
         }
@@ -143,7 +137,28 @@ class CallbackFactory
         callable $factoryCallback
     ): \Closure {
         return function () use ($callable, $container, $requestedName, $factoryCallback) {
-            $callable($container, $requestedName, $factoryCallback);
+            return $callable($container, $requestedName, $factoryCallback);
+        };
+    }
+
+    /**
+     * @param object $delegator
+     * @param string $method
+     * @param ContainerInterface $container
+     * @param string $requestedName
+     * @param callable $callback
+     *
+     * @return \Closure
+     */
+    public static function createDelegatorFactoryCallbackFromObjectMethodCallable(
+        $delegator,
+        string $method,
+        ContainerInterface $container,
+        string $requestedName,
+        callable $callback
+    ): \Closure {
+        return function () use ($container, $delegator, $method, $requestedName, $callback) {
+            return $delegator->$method($container, $requestedName, $callback);
         };
     }
 }

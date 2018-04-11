@@ -17,7 +17,7 @@ class CallbackFactoryTest extends TestCase
 
         $container->set('someServiceId', $service);
 
-        $callback = CallbackFactory::createCallback($container, 'someServiceId');
+        $callback = CallbackFactory::createFactoryCallback($container, 'someServiceId');
 
         $this->assertInstanceOf(\Closure::class, $callback);
         $this->assertEquals($service, $callback());

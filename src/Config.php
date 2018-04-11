@@ -40,9 +40,7 @@ class Config implements ConfigInterface
         $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
         $builder->set('config', $config);
 
-        if (isset($this->config['dependencies'])
-            && is_array($this->config['dependencies'])
-        ) {
+        if (!isset($this->config['dependencies']) || ! is_array($this->config['dependencies'])) {
             $dependencies = $this->config['dependencies'];
 
             //Inject known services
@@ -141,9 +139,37 @@ class Config implements ConfigInterface
      *
      * @return void
      */
-    protected function injectFactory(string $id, $factory, ContainerBuilder $builder) : void
+    protected function injectFactory(string $id, $factory, ContainerBuilder $builder): void
     {
-        if (is_callable($factory) && ! is_object($factory)) {
+        /**
+         * support for invokable (object) and [(object), 'method']
+         *
+         * - comply with Definition::setFactory() documentation
+         * - allow dumping/caching container's configuration using synthetic services
+         */
+        if (is_object($factory) || (is_array($factory) && is_object($factory[0]) && is_string($factory[1]))) {
+            //register factory object as service
+            $factoryObjectServiceId = $this->zendSmSfDiBridgeCreateId("{$id}.factory.service");
+            $factoryObject = is_object($factory) ? $factory : $factory[0];
+
+            if ($this->servicesAsSynthetic) {
+                $builder->register($factoryObjectServiceId, get_class($factoryObject))->setSynthetic(true);
+            } else {
+                $builder->set($factoryObjectServiceId, $factoryObject);
+            }
+
+            $method = is_object($factory) ? '__invoke' : $factory[1];
+
+            $builder->register($id, $id)
+                ->setPublic(true)
+                ->setFactory([new Reference($factoryObjectServiceId), $method])
+                ->setArguments([new Reference('service_container'), $id]);
+
+            return;
+        }
+
+        //static method or php named function
+        if (is_callable($factory)) {
             $builder->register($id, $id)
                 ->setPublic(true)
                 ->setFactory($factory)
@@ -152,14 +178,11 @@ class Config implements ConfigInterface
             return;
         }
 
+        //class name
         $builder->register($id, $id)
             ->setPublic(true)
-            ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
-            ->setArguments([
-                $factory,
-                new Reference('service_container'),
-                $id
-            ]);
+            ->setFactory([CallbackFactory::class, 'createServiceWithClassFactory'])
+            ->setArguments([$factory, new Reference('service_container'), $id]);
     }
 
     /**
@@ -180,11 +203,6 @@ class Config implements ConfigInterface
              * @see DelegatorTestTrait::testDelegatorsNamedForAliasDoNotApplyToInvokableServiceWithAlias
              */
             return;
-            /*
-            throw new UnexpectedValueException(
-                "Delegators for aliases are not supported ({$id})"
-            );
-            */
         }
 
         if (! $builder->hasDefinition($id)) {
@@ -227,47 +245,73 @@ class Config implements ConfigInterface
         $builder
             ->register($factoryCallbackId, Closure::class)
             ->setPublic(false)
-            ->setFactory([CallbackFactory::class, 'createCallback'])
+            ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
             ->setArguments([new Reference('service_container'), $originId]);
 
         for ($delegator = reset($delegators);
              $delegator !== false;
              $delegator = next($delegators), $factoryCallbackId = $delegatorFactoryCallbackId) {
-            $delegatorName = $delegator;
-
-            if (is_callable($delegator)) {
-                //Static method as delegator
-                if (is_array($delegator) && is_string($delegator[0]) && is_string($delegator[1])) {
-                    $delegatorName = "{$delegator[0]}::{$delegator[1]}";
-                } elseif (! is_string($delegator)) {
-                    throw new UnexpectedValueException(
-                        "This bridge supports only PHP functions or static methods as callable delegator factories"
-                    );
-                }
-            } elseif (! is_string($delegator)/* || ! class_exists($delegator)*/) { //Non-existent classes expect to
-                                                                                   //throw exception on service
-                                                                                   //retrieval
-                throw new UnexpectedValueException(
-                    "This bridge supports callables or invokable class names as delegator factories"
-                );
-            }
+            $key = key($delegators);
 
             $delegatorFactoryCallbackId = $this->zendSmSfDiBridgeCreateId(
-                "{$factoryCallbackId}.delegator.{$delegatorName}.callback"
+                "{$id}.delegator.{$key}.callback"
             );
+
+            /**
+             * support for invokable (object) and [(object), 'method'] as delegator
+             *
+             * - allow for dumping/caching using synthetic services
+             */
+            if (is_object($delegator) ||
+                (is_array($delegator) && is_object($delegator[0]) && is_string($delegator[1]))
+            ) {
+                //register delegator (object) as service
+                $delegatorObject = is_object($delegator) ? $delegator : $delegator[0];
+                $delegatorObjectServiceId = $this->zendSmSfDiBridgeCreateId("{$id}.delegator.{$key}.service");
+
+                if ($this->servicesAsSynthetic) {
+                    $builder->register($delegatorObjectServiceId, get_class($delegatorObject))
+                        ->setSynthetic(true);
+                } else {
+                    $builder->set($delegatorObjectServiceId, $delegatorObject);
+                }
+
+                if (is_object($delegator)) {
+                    $builder->register($delegatorFactoryCallbackId, Closure::class)
+                        ->setPublic(false)
+                        ->setFactory([CallbackFactory::class, 'createDelegatorFactoryCallback'])
+                        ->setArguments([
+                            new Reference($delegatorObjectServiceId),
+                            new Reference('service_container'),
+                            $id,
+                            new Reference($factoryCallbackId)
+                        ]);
+                } else {
+                    $builder->register($delegatorFactoryCallbackId, Closure::class)
+                        ->setPublic(false)
+                        ->setFactory([CallbackFactory::class, 'createDelegatorFactoryCallbackFromObjectMethodCallable'])
+                        ->setArguments([
+                            new Reference($delegatorObjectServiceId),
+                            $delegator[1],
+                            new Reference('service_container'),
+                            $id,
+                            new Reference($factoryCallbackId)
+                        ]);
+                }
+
+                continue;
+            }
 
             $builder
                 ->register($delegatorFactoryCallbackId, Closure::class)
                 ->setPublic(false)
                 ->setFactory([CallbackFactory::class, 'createDelegatorFactoryCallback'])
-                ->setArguments(
-                    [
-                        $delegator,
-                        new Reference('service_container'),
-                        $id,
-                        new Reference($factoryCallbackId)
-                    ]
-                );
+                ->setArguments([
+                    $delegator,
+                    new Reference('service_container'),
+                    $id,
+                    new Reference($factoryCallbackId)
+                ]);
         }
 
         //Finally, register the last Closure as factory for the service
@@ -300,7 +344,7 @@ class Config implements ConfigInterface
 
         $wrapperFactoryId = "{$wrapperId}.factory";
         $builder->register($wrapperFactoryId, Closure::class)
-            ->setFactory([CallbackFactory::class, 'createCallback'])
+            ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
             ->setArguments([new Reference('service_container'), $wrapperId])
             ->setPublic(false);
 

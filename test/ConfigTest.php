@@ -5,26 +5,24 @@ namespace JSoumelidisTest\SymfonyDI\Config;
 use JSoumelidis\SymfonyDI\Config\Config;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use UnexpectedValueException;
 use Zend\ContainerConfigTest\TestAsset\Delegator;
 use Zend\ContainerConfigTest\TestAsset\DelegatorFactory;
+use Zend\ContainerConfigTest\TestAsset\Factory;
 use Zend\ContainerConfigTest\TestAsset\Service;
 
 class ConfigTest extends TestCase
 {
-    /**
-     * @var ContainerFactory
-     */
-    protected $containerFactory;
-
-    public function setUp()
+    protected function createContainer(array $dependencies, bool $servicesAsSynthetic = false) : ContainerBuilder
     {
-        parent::setUp();
+        $factory = new ContainerFactory();
 
-        $this->containerFactory = new ContainerFactory();
+        $container = $factory(new Config(['dependencies' => $dependencies], $servicesAsSynthetic));
+
+        $container->compile();
+
+        return $container;
     }
 
     public function testServicesAsSyntheticRegister(): void
@@ -35,8 +33,7 @@ class ConfigTest extends TestCase
             ],
         ];
 
-        $config = new Config(['dependencies' => $dependencies], true);
-        $container = $this->containerFactory->__invoke($config);
+        $container = $this->createContainer($dependencies, true);
 
         $this->assertTrue($container->has(Service::class));
         $this->assertTrue($container->getDefinition(Service::class)->isSynthetic());
@@ -53,14 +50,13 @@ class ConfigTest extends TestCase
             ],
         ];
 
-        $config = new Config(['dependencies' => $dependencies], true);
+        $container = $this->createContainer($dependencies, true);
 
-        $this->containerFactory->__invoke($config)->get(Service::class);
+        $container->get(Service::class);
     }
-
+/*
     public function testStaticMethodCallAsDelegatorFactory(): void
     {
-        $this->markTestSkipped();
         $dependencies = [
             'invokables' => [
                 Service::class,
@@ -72,7 +68,7 @@ class ConfigTest extends TestCase
             ],
         ];
 
-        $container = $this->containerFactory->__invoke(new Config(['dependencies' => $dependencies]));
+        $container = $this->createContainer($dependencies);
 
         $this->assertTrue($container->has(Service::class));
 
@@ -80,71 +76,160 @@ class ConfigTest extends TestCase
         $this->assertInstanceOf(Service::class, $object);
         $this->assertInstanceOf(ContainerInterface::class, $object->injected[0]);
     }
-
-    /**
-     * @expectedException UnexpectedValueException
-     */
-    public function testUnexpectedValueAsDelegatorFactory(): void
+*/
+    public function testObjectMethodCallableAsFactory(): void
     {
-        $this->markTestSkipped();
+        $dependencies = [
+            'factories' => [
+                Service::class => [new Factory(), '__invoke'],
+            ],
+        ];
+
+        $container = $this->createContainer($dependencies);
+
+        $this->assertTrue($container->has(Service::class));
+
+        $object = $container->get(Service::class);
+
+        $this->assertInstanceOf(Service::class, $object);
+    }
+
+    public function testObjectMethodCallableAsFactoryUsingSyntheticServices(): void
+    {
+        $dependencies = [
+            'factories' => [
+                Service::class => [new Factory(), '__invoke'],
+            ],
+        ];
+
+        $container = $this->createContainer($dependencies, true);
+
+        $this->assertTrue($container->has(Service::class));
+        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+
+        $container->get(Service::class);
+    }
+
+    public function testObjectAsFactory(): void
+    {
+        $dependencies = [
+            'factories' => [
+                Service::class => new Factory(),
+            ],
+        ];
+
+        $container = $this->createContainer($dependencies);
+
+        $this->assertTrue($container->has(Service::class));
+
+        $object = $container->get(Service::class);
+        $this->assertInstanceOf(Service::class, $object);
+    }
+
+    public function testObjectAsFactoryUsingSyntheticServices(): void
+    {
+        $dependencies = [
+            'factories' => [
+                Service::class => new Factory(),
+            ],
+        ];
+
+        $container = $this->createContainer($dependencies, true);
+
+        $this->assertTrue($container->has(Service::class));
+        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+
+        $container->get(Service::class);
+    }
+
+    public function testObjectMethodCallableAsDelegatorFactory(): void
+    {
         $dependencies = [
             'invokables' => [
                 Service::class,
             ],
             'delegators' => [
                 Service::class => [
-                    5,
+                    [new DelegatorFactory(), '__invoke'],
                 ],
             ],
         ];
 
-        $config = new Config(['dependencies' => $dependencies]);
-        $this->containerFactory->__invoke($config);
+        $container = $this->createContainer($dependencies);
+
+        $this->assertTrue($container->has(Service::class));
+
+        $object = $container->get(Service::class);
+
+        $this->assertInstanceOf(Delegator::class, $object);
+        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
+        $this->assertInstanceOf(Service::class, $callback());
     }
 
-    /**
-     * @expectedException UnexpectedValueException
-     */
-    public function testUnexpectedClosureAsDelegatorFactory(): void
+    public function testObjectMethodCallableAsDelegatorFactoryUsingSyntheticServices(): void
     {
-        $this->markTestSkipped();
         $dependencies = [
             'invokables' => [
-                Service::class => Service::class,
+                Service::class,
             ],
             'delegators' => [
                 Service::class => [
-                    function () {
-                        return new Service();
-                    },
+                    [new DelegatorFactory(), '__invoke'],
                 ],
             ],
         ];
 
-        $config = new Config(['dependencies' => $dependencies]);
-        $this->containerFactory->__invoke($config);
+        $container = $this->createContainer($dependencies, true);
+
+        $this->assertTrue($container->has(Service::class));
+        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+
+        $container->get(Service::class);
     }
 
-    /**
-     * @expectedException UnexpectedValueException
-     */
-    public function testUnexpectedObjectMethodAsDelegatorFactory(): void
+    public function testObjectAsDelegatorFactory(): void
     {
-        $object = new DelegatorFactory();
-
         $dependencies = [
             'invokables' => [
-                Service::class => Service::class,
+                Service::class,
             ],
             'delegators' => [
                 Service::class => [
-                    [$object, '__invoke']
+                    new DelegatorFactory(),
                 ],
             ],
         ];
 
-        $config = new Config(['dependencies' => $dependencies]);
-        $this->containerFactory->__invoke($config);
+        $container = $this->createContainer($dependencies);
+
+        $this->assertTrue($container->has(Service::class));
+
+        $object = $container->get(Service::class);
+
+        $this->assertInstanceOf(Delegator::class, $object);
+        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
+        $this->assertInstanceOf(Service::class, $callback());
+    }
+
+    public function testObjectAsDelegatorFactoryUsingSyntheticServices(): void
+    {
+        $dependencies = [
+            'invokables' => [
+                Service::class,
+            ],
+            'delegators' => [
+                Service::class => [
+                    new DelegatorFactory(),
+                ],
+            ],
+        ];
+
+        $container = $this->createContainer($dependencies, true);
+
+        $this->assertTrue($container->has(Service::class));
+        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+
+        $container->get(Service::class);
     }
 
     /**
@@ -160,10 +245,13 @@ class ConfigTest extends TestCase
             ],
         ];
 
+        $this->createContainer($dependencies);
+        /*
         $builder = new ContainerBuilder();
 
         $config = new Config(['dependencies' => $dependencies]);
         $config->configureContainerBuilder($builder);
+        */
     }
 
     /**
