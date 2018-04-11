@@ -136,62 +136,30 @@ class Config implements ConfigInterface
      * Injects definition for a ServiceManager factory entry
      *
      * @param string $id Service name to create a factory for
-     * @param string|callable $factory The factory definition
+     * @param string|callable|array|object $factory The factory definition
      * @param ContainerBuilder $builder The builder that factory will be injected
      *
      * @return void
      */
-    protected function injectFactory(string $id, $factory, ContainerBuilder $builder): void
+    protected function injectFactory(string $id, $factory, ContainerBuilder $builder) : void
     {
-        if (is_callable($factory)) {
-            if ($factory instanceof Closure) {
-                throw new UnexpectedValueException(
-                    "This bridge does not support Closures as factories ({$id})"
-                );
-            }
-
-            if (is_array($factory) && ! is_string($factory[0])) {
-                throw new UnexpectedValueException(
-                    "This bridge supports only php named functions or static methods as callable factories ({$id})"
-                );
-            }
-
+        if (is_callable($factory) && ! is_object($factory)) {
             $builder->register($id, $id)
+                ->setPublic(true)
                 ->setFactory($factory)
-                //Zend ServiceManager FactoryInterface arguments
-                ->setArguments([new Reference('service_container'), $id])
-                ->setPublic(true);
+                ->setArguments([new Reference('service_container'), $id]);
 
             return;
         }
 
-        if (! is_string($factory)) {
-            throw new UnexpectedValueException(
-                "This bridge supports callables or invokable class names as factories"
-            );
-        }
-
-        $factoryCallbackId = $this->zendSmSfDiBridgeCreateId(
-            "{$id}.{$factory}.factory.callback"
-        );
-
-        //Create a callback that - when called - will return an instance of $factory class
-        $builder->register($factoryCallbackId, Closure::class)
-            ->setPublic(false)
-            ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
-            //Zend ServiceManager FactoryInterface arguments */
-            ->setArguments(
-                [
-                    $factory,
-                    /* Zend ServiceManager FactoryInterface arguments */
-                    new Reference('service_container'),
-                    $id
-                ]
-            );
-
         $builder->register($id, $id)
-            ->setFactory([new Reference($factoryCallbackId), '__invoke'])
-            ->setPublic(true);
+            ->setPublic(true)
+            ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
+            ->setArguments([
+                $factory,
+                new Reference('service_container'),
+                $id
+            ]);
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace JSoumelidis\SymfonyDI\Config;
 
 use Psr\Container\ContainerInterface;
-use UnexpectedValueException;
 
 class CallbackFactory
 {
@@ -34,65 +33,27 @@ class CallbackFactory
      * @param ContainerInterface $container
      * @param string $requestedName
      *
-     * @return \Closure
+     * @return mixed
      *
-     * @throws UnexpectedValueException
+     * @throws Exception\ServiceNotFoundException
      */
     public static function createFactoryCallback(
         $factory,
         ContainerInterface $container,
         string $requestedName
-    ): \Closure {
+    ) {
         if (is_callable($factory)) {
-            return static::createFactoryCallbackFromCallable($factory, $container, $requestedName);
-        }
-
-        if (is_string($factory)) {
-            return static::createFactoryCallbackFromName($factory, $container, $requestedName);
-        }
-
-        throw new UnexpectedValueException('Expected a callable or a valid class name');
-    }
-
-    /**
-     * @param callable $callable
-     * @param ContainerInterface $container
-     * @param string $requestedName
-     *
-     * @return \Closure
-     */
-    protected static function createFactoryCallbackFromCallable(
-        callable $callable,
-        ContainerInterface $container,
-        string $requestedName
-    ): \Closure {
-        return function () use ($callable, $container, $requestedName) {
-            return $callable($container, $requestedName);
-        };
-    }
-
-    /**
-     * @param string $factory
-     * @param ContainerInterface $container
-     * @param string $requestedName
-     *
-     * @return \Closure
-     */
-    protected static function createFactoryCallbackFromName(
-        string $factory,
-        ContainerInterface $container,
-        string $requestedName
-    ): \Closure {
-        return function () use ($factory, $container, $requestedName) {
-            if (! class_exists($factory) || ! is_callable($factory = new $factory)) {
-                throw Exception\ServiceNotFoundException::create(sprintf(
-                    'Factory class %s not found or not callable',
-                    is_string($factory) ? $factory : get_class($factory)
-                ));
-            }
-
             return $factory($container, $requestedName);
-        };
+        }
+
+        if (! is_string($factory) || ! class_exists($factory) || ! is_callable($factory = new $factory)) {
+            throw Exception\ServiceNotFoundException::create(sprintf(
+                'Factory class %s not found or not callable',
+                is_object($factory) ? get_class($factory) : var_export($factory, true)
+            ));
+        }
+
+        return $factory($container, $requestedName);
     }
 
     /**
@@ -182,8 +143,7 @@ class CallbackFactory
         callable $factoryCallback
     ): \Closure {
         return function () use ($callable, $container, $requestedName, $factoryCallback) {
-            //PHP 5.6 fix
-            return call_user_func($callable, $container, $requestedName, $factoryCallback);
+            $callable($container, $requestedName, $factoryCallback);
         };
     }
 }
