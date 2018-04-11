@@ -16,7 +16,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/weierophinney/zend-container-config-test"
+            "url": "https://github.com/webimpress/zend-container-config-test"
         }
     ],
     "require": {
@@ -24,7 +24,7 @@
         "symfony/dependency-injection": "^3.4 || ^4.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^5.7.23 || ^6.4.3",
+        "phpunit/phpunit": "^7.1.2",
         "zendframework/zend-coding-standard": "~1.0.0",
         "zendframework/zend-container-config-test": "dev-improvements"
     },
@@ -46,7 +46,6 @@
         "cs-check": "phpcs",
         "cs-fix": "phpcbf",
         "test": "phpunit --colors=always",
-        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml",
-        "upload-coverage": "coveralls -v"
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
     }
 }
