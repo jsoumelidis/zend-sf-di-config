@@ -19,6 +19,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^7.1.2",
+        "symfony/config": "^3.4 || ^4.0",
         "zendframework/zend-coding-standard": "~1.0.0",
         "zendframework/zend-container-config-test": "^0.2 || ^1.0"
     },
@@ -31,6 +32,9 @@
         "psr-4": {
             "JSoumelidisTest\\SymfonyDI\\Config\\": "test"
         }
+    },
+    "suggest": {
+        "symfony/config": "Required for symfony DI dumping functionality"
     },
     "scripts": {
         "check": [

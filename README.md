@@ -96,27 +96,20 @@ $config  = require __DIR__ . '/config.php';
 
 $containerBuilder = new \Symfony\Component\DependencyInjection\ContainerBuilder();
 
-//...Some work here...
+//...Your work here...
 
 $factory = new ContainerFactory();
-$factory(new Config($config), $containerBuilder);
-
-//Maybe you'll wish to compile the container and dump (cache) it
-$containerBuilder->compile();
-// ... other code
-
-return $containerBuilder;
+return $factory(new Config($config), $containerBuilder);
 ```
 
 ## Dumping/Caching the Container
 
-If you are planning to use Symfony DI Container's dumping/caching functionality you
-should be aware that Closures, callable objects or callables of type [(object), 'method']
-as factories and/or delegators are not compatible, while php named functions and static method
-callables are perfectly fine.
-
-Services defined in `services` require to be registered as synthetic and re-set once the cached
-container is booted like the following example:
+Symfony DI Container's dumping functionality is now supported.
+See the following example for using with expressive.
+For more information about compiling, dumping and caching Symfony DIC's configuration
+visit symfony documentation
+[here](https://symfony.com/doc/current/components/dependency_injection/compilation.html#dumping-the-configuration-for-performance)  
+> This functionality requires symfony/config package
 ```php
 <?php
 use JSoumelidis\SymfonyDI\Config\Config;
@@ -126,28 +119,29 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 $factory = new ContainerFactory();
 
 $config = require __DIR__ . '/config.php';
-$cachedContainerFile = __DIR__ . '/../var/cache/container.php';
+$cachedContainerFile = 'someFileToDumpContainerConfiguration.php';
+
+$containerConfig = new Config($config, true); //set 2nd argument to true while
+                                              //instantiating Config to register
+                                              //services as synthetic
 
 if (file_exists($cachedContainerFile)) {
     //load cached container
     require_once($cachedContainerFile);
     
-    $container = new ProjectServiceContainer();
+    //boot the cached container
+    $container = new ProjectServiceContainer(); //Default class for Symfony DI
     
-    //re-set synthetic services
-    foreach ($config['dependencies']['services'] as $id => $service) {
-        $container->set($id, $service);
-    }
-    
-    //Config must be set again as a service separately
-    $container->set('config', new ArrayObject($config));
+    //re-set synthetic services, this is mandatory
+    $containerConfig->setSyntheticServices($container);
     
     return $container;
 }
 
-$container = $factory(new Config($config, true)); //set 2nd argument to true while
-                                                  //instantiating Config to register
-                                                  //services as synthetic
+$container = $factory($containerConfig);
+
+//... other user configuration here
+
 $container->compile();
 file_put_contents($cachedContainerFile, (new PhpDumper($container))->dump());
 

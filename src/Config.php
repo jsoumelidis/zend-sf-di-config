@@ -3,6 +3,7 @@
 namespace JSoumelidis\SymfonyDI\Config;
 
 use Closure;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
@@ -26,10 +27,56 @@ class Config implements ConfigInterface
      * @param array $config
      * @param bool $servicesAsSynthetic
      */
-    public function __construct(array $config, $servicesAsSynthetic = false)
+    public function __construct(array $config, bool $servicesAsSynthetic = false)
     {
         $this->config = $config;
-        $this->servicesAsSynthetic = (bool)$servicesAsSynthetic;
+        $this->servicesAsSynthetic = $servicesAsSynthetic;
+    }
+
+    /**
+     * @param Container $container
+     */
+    public function setSyntheticServices(Container $container): void
+    {
+        $container->set('config', new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS));
+
+        if (isset($this->config['dependencies']) && is_array($this->config['dependencies'])) {
+            $dependencies = $this->config['dependencies'];
+
+            if (! empty($dependencies['services']) && is_array($dependencies['services'])) {
+                foreach ($dependencies['services'] as $name => $object) {
+                    $container->set($name, $object);
+                }
+            }
+
+            //set factory objects
+            if (! empty($dependencies['factories']) && is_array($dependencies['factories'])) {
+                foreach ($dependencies['factories'] as $name => $factory) {
+                    if (is_object($factory) || (is_array($factory) && is_object($factory[0]))) {
+                        $factoryObjectServiceId = $this->getFactoryObjectServiceId($name);
+                        $factoryObject = is_object($factory) ? $factory : $factory[0];
+
+                        $container->set($factoryObjectServiceId, $factoryObject);
+                    }
+                }
+            }
+
+            //set delegator objects
+            if (! empty($dependencies['delegators']) && is_array($dependencies['delegators'])) {
+                foreach ($dependencies['delegators'] as $name => $delegators) {
+                    if (is_array($delegators)) {
+                        foreach ($delegators as $index => $delegator) {
+                            if (is_object($delegator) || (is_array($delegator) && is_object($delegator[0]))) {
+                                $delegatorObjectServiceId = $this->getDelegatorObjectServiceId($name, $index);
+                                $delegatorObject = is_object($delegator) ? $delegator : $delegator[0];
+
+                                $container->set($delegatorObjectServiceId, $delegatorObject);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -37,8 +84,14 @@ class Config implements ConfigInterface
      */
     public function configureContainerBuilder(ContainerBuilder $builder)
     {
-        $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
-        $builder->set('config', $config);
+        if ($this->servicesAsSynthetic) {
+            $builder->register('config', \ArrayObject::class)
+                ->setSynthetic(true)
+                ->setPublic(true);
+        } else {
+            $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
+            $builder->set('config', $config);
+        }
 
         if (isset($this->config['dependencies']) && is_array($this->config['dependencies'])) {
             $dependencies = $this->config['dependencies'];
@@ -149,11 +202,13 @@ class Config implements ConfigInterface
          */
         if (is_object($factory) || (is_array($factory) && is_object($factory[0]) && is_string($factory[1]))) {
             //register factory object as service
-            $factoryObjectServiceId = $this->zendSmSfDiBridgeCreateId("{$id}.factory.service");
+            $factoryObjectServiceId = $this->getFactoryObjectServiceId($id);
             $factoryObject = is_object($factory) ? $factory : $factory[0];
 
             if ($this->servicesAsSynthetic) {
-                $builder->register($factoryObjectServiceId, get_class($factoryObject))->setSynthetic(true);
+                $builder->register($factoryObjectServiceId, get_class($factoryObject))
+                    ->setSynthetic(true)
+                    ->setPublic(true);
             } else {
                 $builder->set($factoryObjectServiceId, $factoryObject);
             }
@@ -183,6 +238,16 @@ class Config implements ConfigInterface
             ->setPublic(true)
             ->setFactory([CallbackFactory::class, 'createServiceWithClassFactory'])
             ->setArguments([$factory, new Reference('service_container'), $id]);
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return string
+     */
+    protected function getFactoryObjectServiceId(string $id): string
+    {
+        return $this->zendSmSfDiBridgeCreateId("{$id}.factory.service");
     }
 
     /**
@@ -248,11 +313,7 @@ class Config implements ConfigInterface
             ->setFactory([CallbackFactory::class, 'createFactoryCallback'])
             ->setArguments([new Reference('service_container'), $originId]);
 
-        for ($delegator = reset($delegators);
-             $delegator !== false;
-             $delegator = next($delegators), $factoryCallbackId = $delegatorFactoryCallbackId) {
-            $key = key($delegators);
-
+        foreach ($delegators as $key => $delegator) {
             $delegatorFactoryCallbackId = $this->zendSmSfDiBridgeCreateId(
                 "{$id}.delegator.{$key}.callback"
             );
@@ -267,11 +328,12 @@ class Config implements ConfigInterface
             ) {
                 //register delegator (object) as service
                 $delegatorObject = is_object($delegator) ? $delegator : $delegator[0];
-                $delegatorObjectServiceId = $this->zendSmSfDiBridgeCreateId("{$id}.delegator.{$key}.service");
+                $delegatorObjectServiceId = $this->getDelegatorObjectServiceId($id, $key);
 
                 if ($this->servicesAsSynthetic) {
                     $builder->register($delegatorObjectServiceId, get_class($delegatorObject))
-                        ->setSynthetic(true);
+                        ->setSynthetic(true)
+                        ->setPublic(true);
                 } else {
                     $builder->set($delegatorObjectServiceId, $delegatorObject);
                 }
@@ -298,20 +360,20 @@ class Config implements ConfigInterface
                             new Reference($factoryCallbackId)
                         ]);
                 }
-
-                continue;
+            } else {
+                $builder
+                    ->register($delegatorFactoryCallbackId, Closure::class)
+                    ->setPublic(false)
+                    ->setFactory([CallbackFactory::class, 'createDelegatorFactoryCallback'])
+                    ->setArguments([
+                        $delegator,
+                        new Reference('service_container'),
+                        $id,
+                        new Reference($factoryCallbackId)
+                    ]);
             }
 
-            $builder
-                ->register($delegatorFactoryCallbackId, Closure::class)
-                ->setPublic(false)
-                ->setFactory([CallbackFactory::class, 'createDelegatorFactoryCallback'])
-                ->setArguments([
-                    $delegator,
-                    new Reference('service_container'),
-                    $id,
-                    new Reference($factoryCallbackId)
-                ]);
+            $factoryCallbackId = $delegatorFactoryCallbackId;
         }
 
         //Finally, register the last Closure as factory for the service
@@ -320,6 +382,17 @@ class Config implements ConfigInterface
             ->register($id, $definition->getClass())
             ->setFactory([new Reference($factoryCallbackId), '__invoke'])
             ->setPublic($definition->isPublic());
+    }
+
+    /**
+     * @param string $id
+     * @param string|int $index
+     *
+     * @return string
+     */
+    protected function getDelegatorObjectServiceId(string $id, $index): string
+    {
+        return $this->zendSmSfDiBridgeCreateId("{$id}.delegator.{$index}.service");
     }
 
     /**
