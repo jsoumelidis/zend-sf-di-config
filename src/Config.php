@@ -40,7 +40,7 @@ class Config implements ConfigInterface
         $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
         $builder->set('config', $config);
 
-        if (!isset($this->config['dependencies']) || ! is_array($this->config['dependencies'])) {
+        if (isset($this->config['dependencies']) && is_array($this->config['dependencies'])) {
             $dependencies = $this->config['dependencies'];
 
             //Inject known services

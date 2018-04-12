@@ -105,7 +105,11 @@ class ConfigTest extends TestCase
         $container = $this->createContainer($dependencies, true);
 
         $this->assertTrue($container->has(Service::class));
-        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+        $this->expectExceptionMessage(
+            'You have requested a synthetic service '.
+            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
+            'The DIC does not know how to construct this service.'
+        );
 
         $container->get(Service::class);
     }
@@ -137,7 +141,11 @@ class ConfigTest extends TestCase
         $container = $this->createContainer($dependencies, true);
 
         $this->assertTrue($container->has(Service::class));
-        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+        $this->expectExceptionMessage(
+            'You have requested a synthetic service '.
+            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
+            'The DIC does not know how to construct this service.'
+        );
 
         $container->get(Service::class);
     }
@@ -182,7 +190,11 @@ class ConfigTest extends TestCase
         $container = $this->createContainer($dependencies, true);
 
         $this->assertTrue($container->has(Service::class));
-        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+        $this->expectExceptionMessage(
+            'You have requested a synthetic service '.
+            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
+            'The DIC does not know how to construct this service.'
+        );
 
         $container->get(Service::class);
     }
@@ -227,7 +239,11 @@ class ConfigTest extends TestCase
         $container = $this->createContainer($dependencies, true);
 
         $this->assertTrue($container->has(Service::class));
-        $this->expectExceptionMessage('You have requested a synthetic service ("")');
+        $this->expectExceptionMessage(
+            'You have requested a synthetic service '.
+            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
+            'The DIC does not know how to construct this service.'
+        );
 
         $container->get(Service::class);
     }
