@@ -109,9 +109,7 @@ class CallbackFactory
         callable $factoryCallback
     ): \Closure {
         return function () use ($delegatorName, $container, $requestedName, $factoryCallback) {
-            $delegator = new $delegatorName;
-
-            if (! is_callable($delegator)) {
+            if (! is_callable($delegator = new $delegatorName)) {
                 throw Exception\ServiceNotFoundException::create(sprintf(
                     'Delegator class %s is not callable',
                     $delegatorName
