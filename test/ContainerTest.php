@@ -46,9 +46,6 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         self::assertTrue($container->getDefinition(Service::class)->isSynthetic());
     }
 
-    /**
-     * @expectedException \Exception
-     */
     public function testServicesAsSyntheticCannotBeFetched(): void
     {
         $dependencies = [
@@ -56,6 +53,8 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
                 Service::class => $service = new Service(),
             ],
         ];
+
+        $this->expectException(\Exception::class);
 
         $container = $this->createContainer($dependencies, true);
 
@@ -114,7 +113,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
             'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
+            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '.
             'The DIC does not know how to construct this service.'
         );
 
@@ -150,7 +149,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
             'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
+            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '.
             'The DIC does not know how to construct this service.'
         );
 
@@ -199,7 +198,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
             'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
+            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
             'The DIC does not know how to construct this service.'
         );
 
@@ -248,7 +247,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
             'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
+            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
             'The DIC does not know how to construct this service.'
         );
 
