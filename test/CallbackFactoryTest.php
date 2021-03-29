@@ -2,32 +2,34 @@
 
 namespace JSoumelidisTest\SymfonyDI\Config;
 
+use Closure;
 use JSoumelidis\SymfonyDI\Config\CallbackFactory;
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\DependencyInjection\Container;
 use Laminas\ContainerConfigTest\TestAsset\Delegator;
 use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
+use PHPUnit\Framework\TestCase;
+use stdClass;
+use Symfony\Component\DependencyInjection\Container;
 
 class CallbackFactoryTest extends TestCase
 {
     public function testCreatesContainerCallback(): void
     {
-        $service = new \stdClass();
+        $service   = new stdClass();
         $container = new Container();
 
         $container->set('someServiceId', $service);
 
         $callback = CallbackFactory::createFactoryCallback($container, 'someServiceId');
 
-        self::assertInstanceOf(\Closure::class, $callback);
+        self::assertInstanceOf(Closure::class, $callback);
         self::assertEquals($service, $callback());
     }
 
     public function testCreatesDelegatorFactoryCallbackFromInvokableClassName(): void
     {
-        $container = new Container();
+        $container       = new Container();
         $factoryCallback = function () {
-            return new \stdClass();
+            return new stdClass();
         };
 
         $callback = CallbackFactory::createDelegatorFactoryCallback(
@@ -37,8 +39,8 @@ class CallbackFactoryTest extends TestCase
             $factoryCallback
         );
 
-        self::assertInstanceOf(\Closure::class, $callback);
+        self::assertInstanceOf(Closure::class, $callback);
         self::assertInstanceOf(Delegator::class, $object = $callback());
-        self::assertInstanceOf(\Closure::class, $object->callback);
+        self::assertInstanceOf(Closure::class, $object->callback);
     }
 }

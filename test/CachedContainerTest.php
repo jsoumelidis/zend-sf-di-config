@@ -2,15 +2,22 @@
 
 namespace JSoumelidisTest\SymfonyDI\Config;
 
+use Closure;
 use JSoumelidis\SymfonyDI\Config\Config;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
-use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Laminas\ContainerConfigTest\AbstractMezzioContainerConfigTest;
 use Laminas\ContainerConfigTest\TestAsset\Delegator;
 use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
 use Laminas\ContainerConfigTest\TestAsset\Factory;
 use Laminas\ContainerConfigTest\TestAsset\Service;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
+
+use function file_put_contents;
+use function sys_get_temp_dir;
+use function tempnam;
+use function uniqid;
+use function unlink;
 
 /**
  * Test that a dumped container configuration
@@ -18,15 +25,13 @@ use Laminas\ContainerConfigTest\TestAsset\Service;
  */
 class CachedContainerTest extends AbstractMezzioContainerConfigTest
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $containerCacheFile;
 
-    protected function createContainer(array $config) : ContainerInterface
+    protected function createContainer(array $config): ContainerInterface
     {
         $factory = new ContainerFactory();
-        $config = new Config(['dependencies' => $config], true);
+        $config  = new Config(['dependencies' => $config], true);
 
         $container = $factory($config);
 
@@ -35,9 +40,9 @@ class CachedContainerTest extends AbstractMezzioContainerConfigTest
             'class' => $containerClass = "ContainerTest_" . uniqid('', false),
         ]));
 
-        require_once($this->containerCacheFile);
+        require_once $this->containerCacheFile;
 
-        $container = new $containerClass;
+        $container = new $containerClass();
 
         $config->setSyntheticServices($container);
 
@@ -72,7 +77,7 @@ class CachedContainerTest extends AbstractMezzioContainerConfigTest
             ],
             'delegators' => [
                 Service::class => [
-                    [Assets\DelegatorFactory::class, 'create']
+                    [Assets\DelegatorFactory::class, 'create'],
                 ],
             ],
         ];
@@ -139,7 +144,7 @@ class CachedContainerTest extends AbstractMezzioContainerConfigTest
         $object = $container->get(Service::class);
 
         self::assertInstanceOf(Delegator::class, $object);
-        self::assertInstanceOf(\Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
         self::assertInstanceOf(Service::class, $callback());
     }
 
@@ -163,7 +168,7 @@ class CachedContainerTest extends AbstractMezzioContainerConfigTest
         $object = $container->get(Service::class);
 
         self::assertInstanceOf(Delegator::class, $object);
-        self::assertInstanceOf(\Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
         self::assertInstanceOf(Service::class, $callback());
     }
 }

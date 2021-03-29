@@ -2,28 +2,29 @@
 
 namespace JSoumelidisTest\SymfonyDI\Config;
 
+use Closure;
+use Exception;
 use JSoumelidis\SymfonyDI\Config\Config;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
-use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\Alias;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Laminas\ContainerConfigTest\AbstractMezzioContainerConfigTest;
 use Laminas\ContainerConfigTest\TestAsset\Delegator;
 use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
 use Laminas\ContainerConfigTest\TestAsset\Factory;
 use Laminas\ContainerConfigTest\TestAsset\Service;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\DependencyInjection\Alias;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use UnexpectedValueException;
 
 class ContainerTest extends AbstractMezzioContainerConfigTest
 {
     /**
      * @param array $config
-     * @param bool  $servicesAsSynthetic
-     *
      * @return ContainerBuilder
      */
-    protected function createContainer(array $config, bool $servicesAsSynthetic = false) : ContainerInterface
+    protected function createContainer(array $config, bool $servicesAsSynthetic = false): ContainerInterface
     {
-        $factory = new ContainerFactory();
+        $factory   = new ContainerFactory();
         $container = $factory(new Config(['dependencies' => $config], $servicesAsSynthetic));
 
         //Everything should work with compiled container also
@@ -54,7 +55,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
             ],
         ];
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $container = $this->createContainer($dependencies, true);
 
@@ -69,7 +70,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
             ],
             'delegators' => [
                 Service::class => [
-                    [Assets\DelegatorFactory::class, 'create']
+                    [Assets\DelegatorFactory::class, 'create'],
                 ],
             ],
         ];
@@ -112,9 +113,9 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
 
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -148,9 +149,9 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
 
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -176,7 +177,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         $object = $container->get(Service::class);
 
         self::assertInstanceOf(Delegator::class, $object);
-        self::assertInstanceOf(\Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
         self::assertInstanceOf(Service::class, $callback());
     }
 
@@ -197,9 +198,9 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
 
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -225,7 +226,7 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         $object = $container->get(Service::class);
 
         self::assertInstanceOf(Delegator::class, $object);
-        self::assertInstanceOf(\Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
         self::assertInstanceOf(Service::class, $callback());
     }
 
@@ -246,9 +247,9 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
 
         self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -264,13 +265,13 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
             ],
         ];
 
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(UnexpectedValueException::class);
 
         $this->createContainer($dependencies);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreatesPrivateDelegatorForPublicAliasedPrivateServices(): void
     {
@@ -313,6 +314,6 @@ class ContainerTest extends AbstractMezzioContainerConfigTest
         $service = $builder->get('myalias');
 
         self::assertInstanceOf(Delegator::class, $service);
-        self::assertInstanceOf(\Closure::class, $service->callback);
+        self::assertInstanceOf(Closure::class, $service->callback);
     }
 }

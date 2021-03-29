@@ -11,9 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class ContainerFactoryTest extends TestCase
 {
-    /**
-     * @var ContainerFactory
-     */
+    /** @var ContainerFactory */
     private $factory;
 
     protected function setUp(): void
@@ -27,7 +25,7 @@ class ContainerFactoryTest extends TestCase
     {
         $factory = $this->factory;
 
-        $config = $this->prophesize(ConfigInterface::class);
+        $config    = $this->prophesize(ConfigInterface::class);
         $container = $factory($config->reveal());
 
         self::assertInstanceOf(ContainerInterface::class, $container);
