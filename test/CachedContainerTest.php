@@ -32,7 +32,7 @@ class CachedContainerTest extends AbstractMezzioContainerConfigTest
 
         $container->compile();
         file_put_contents($this->containerCacheFile, (new PhpDumper($container))->dump([
-            'class' => $containerClass = "ContainerTest_" . uniqid('', true),
+            'class' => $containerClass = "ContainerTest_" . uniqid('', false),
         ]));
 
         require_once($this->containerCacheFile);
