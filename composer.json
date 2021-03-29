@@ -14,15 +14,14 @@
         "sort-packages": true
     },
     "require": {
-        "php": "^7.1 || ^8.0",
-        "symfony/dependency-injection": "^3.4 || ^4.1.12 || ^5.0"
+        "php": ">=7.1",
+        "symfony/dependency-injection": "^3.4 || ^4.4.9 || ^5.0.9"
     },
     "require-dev": {
-        "php-coveralls/php-coveralls": "^2.2",
-        "phpunit/phpunit": "^7.1.2",
-        "symfony/config": "^3.4 || ^4.0",
-        "zendframework/zend-coding-standard": "~1.0.0",
-        "zendframework/zend-container-config-test": "^0.2.1 || ^1.0"
+        "phpunit/phpunit": ">=8.5.12",
+        "symfony/config": "^4.4.9 || ^5.0.9",
+        "laminas/laminas-coding-standard": "~2.1.2",
+        "laminas/laminas-container-config-test": "^0.4.0 || 0.4.x-dev"
     },
     "autoload": {
         "psr-4": {
