@@ -14,10 +14,11 @@
         "sort-packages": true
     },
     "require": {
-        "php": "^7.1",
+        "php": "^7.1 || ^8.0",
         "symfony/dependency-injection": "^3.4 || ^4.1.12 || ^5.0"
     },
     "require-dev": {
+        "php-coveralls/php-coveralls": "^2.2",
         "phpunit/phpunit": "^7.1.2",
         "symfony/config": "^3.4 || ^4.0",
         "zendframework/zend-coding-standard": "~1.0.0",
