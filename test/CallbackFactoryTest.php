@@ -5,8 +5,8 @@ namespace JSoumelidisTest\SymfonyDI\Config;
 use JSoumelidis\SymfonyDI\Config\CallbackFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Container;
-use Zend\ContainerConfigTest\TestAsset\Delegator;
-use Zend\ContainerConfigTest\TestAsset\DelegatorFactory;
+use Laminas\ContainerConfigTest\TestAsset\Delegator;
+use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
 
 class CallbackFactoryTest extends TestCase
 {
@@ -19,8 +19,8 @@ class CallbackFactoryTest extends TestCase
 
         $callback = CallbackFactory::createFactoryCallback($container, 'someServiceId');
 
-        $this->assertInstanceOf(\Closure::class, $callback);
-        $this->assertEquals($service, $callback());
+        self::assertInstanceOf(\Closure::class, $callback);
+        self::assertEquals($service, $callback());
     }
 
     public function testCreatesDelegatorFactoryCallbackFromInvokableClassName(): void
@@ -37,8 +37,8 @@ class CallbackFactoryTest extends TestCase
             $factoryCallback
         );
 
-        $this->assertInstanceOf(\Closure::class, $callback);
-        $this->assertInstanceOf(Delegator::class, $object = $callback());
-        $this->assertInstanceOf(\Closure::class, $object->callback);
+        self::assertInstanceOf(\Closure::class, $callback);
+        self::assertInstanceOf(Delegator::class, $object = $callback());
+        self::assertInstanceOf(\Closure::class, $object->callback);
     }
 }

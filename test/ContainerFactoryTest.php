@@ -16,7 +16,7 @@ class ContainerFactoryTest extends TestCase
      */
     private $factory;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -30,7 +30,7 @@ class ContainerFactoryTest extends TestCase
         $config = $this->prophesize(ConfigInterface::class);
         $container = $factory($config->reveal());
 
-        $this->assertInstanceOf(ContainerInterface::class, $container);
+        self::assertInstanceOf(ContainerInterface::class, $container);
     }
 
     public function testContainerIsConfigured(): void
