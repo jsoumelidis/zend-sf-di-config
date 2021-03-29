@@ -18,10 +18,11 @@
         "symfony/dependency-injection": "^3.4 || ^4.4.9 || ^5.0.9"
     },
     "require-dev": {
-        "phpunit/phpunit": ">=8.5.12",
-        "symfony/config": "^4.4.9 || ^5.0.9",
         "laminas/laminas-coding-standard": "~2.1.2",
-        "laminas/laminas-container-config-test": "^0.4.0 || 0.4.x-dev"
+        "laminas/laminas-container-config-test": "^0.4.0 || 0.4.x-dev",
+        "phpspec/prophecy-phpunit": "^2.0.1",
+        "phpunit/phpunit": ">=9.3.0",
+        "symfony/config": "^4.4.9 || ^5.0.9"
     },
     "autoload": {
         "psr-4": {

@@ -6,11 +6,14 @@ use JSoumelidis\SymfonyDI\Config\ConfigInterface;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class ContainerFactoryTest extends TestCase
 {
+    use ProphecyTrait;
+
     /** @var ContainerFactory */
     private $factory;
 
