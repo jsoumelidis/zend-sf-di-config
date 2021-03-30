@@ -6,17 +6,18 @@ use JSoumelidis\SymfonyDI\Config\ConfigInterface;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class ContainerFactoryTest extends TestCase
 {
-    /**
-     * @var ContainerFactory
-     */
+    use ProphecyTrait;
+
+    /** @var ContainerFactory */
     private $factory;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -27,10 +28,10 @@ class ContainerFactoryTest extends TestCase
     {
         $factory = $this->factory;
 
-        $config = $this->prophesize(ConfigInterface::class);
+        $config    = $this->prophesize(ConfigInterface::class);
         $container = $factory($config->reveal());
 
-        $this->assertInstanceOf(ContainerInterface::class, $container);
+        self::assertInstanceOf(ContainerInterface::class, $container);
     }
 
     public function testContainerIsConfigured(): void

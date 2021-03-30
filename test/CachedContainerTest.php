@@ -2,42 +2,47 @@
 
 namespace JSoumelidisTest\SymfonyDI\Config;
 
+use Closure;
 use JSoumelidis\SymfonyDI\Config\Config;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
+use Laminas\ContainerConfigTest\AbstractMezzioContainerConfigTest;
+use Laminas\ContainerConfigTest\TestAsset\Delegator;
+use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
+use Laminas\ContainerConfigTest\TestAsset\Factory;
+use Laminas\ContainerConfigTest\TestAsset\Service;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
-use Zend\ContainerConfigTest\AbstractExpressiveContainerConfigTest;
-use Zend\ContainerConfigTest\TestAsset\Delegator;
-use Zend\ContainerConfigTest\TestAsset\DelegatorFactory;
-use Zend\ContainerConfigTest\TestAsset\Factory;
-use Zend\ContainerConfigTest\TestAsset\Service;
+
+use function file_put_contents;
+use function sys_get_temp_dir;
+use function tempnam;
+use function uniqid;
+use function unlink;
 
 /**
  * Test that a dumped container configuration
  * passes all normal tests when booted
  */
-class CachedContainerTest extends AbstractExpressiveContainerConfigTest
+class CachedContainerTest extends AbstractMezzioContainerConfigTest
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $containerCacheFile;
 
-    protected function createContainer(array $config) : ContainerInterface
+    protected function createContainer(array $config): ContainerInterface
     {
         $factory = new ContainerFactory();
-        $config = new Config(['dependencies' => $config], true);
+        $config  = new Config(['dependencies' => $config], true);
 
         $container = $factory($config);
 
         $container->compile();
         file_put_contents($this->containerCacheFile, (new PhpDumper($container))->dump([
-            'class' => $containerClass = "ContainerTest_" . uniqid(),
+            'class' => $containerClass = "ContainerTest_" . uniqid('', false),
         ]));
 
-        require_once($this->containerCacheFile);
+        require_once $this->containerCacheFile;
 
-        $container = new $containerClass;
+        $container = new $containerClass();
 
         $config->setSyntheticServices($container);
 
@@ -47,7 +52,7 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -57,7 +62,7 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
     /**
      * @inheritDoc
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
 
@@ -72,18 +77,18 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
             ],
             'delegators' => [
                 Service::class => [
-                    [Assets\DelegatorFactory::class, 'create']
+                    [Assets\DelegatorFactory::class, 'create'],
                 ],
             ],
         ];
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
-        $this->assertInstanceOf(Service::class, $object);
-        $this->assertInstanceOf(ContainerInterface::class, $object->injected[0]);
+        self::assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(ContainerInterface::class, $object->injected[0]);
     }
 
     public function testObjectMethodCallableAsFactory(): void
@@ -96,11 +101,11 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(Service::class, $object);
     }
 
     public function testObjectAsFactory(): void
@@ -113,10 +118,10 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
-        $this->assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(Service::class, $object);
     }
 
     public function testObjectMethodCallableAsDelegatorFactory(): void
@@ -134,13 +139,13 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Delegator::class, $object);
-        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
-        $this->assertInstanceOf(Service::class, $callback());
+        self::assertInstanceOf(Delegator::class, $object);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Service::class, $callback());
     }
 
     public function testObjectAsDelegatorFactory(): void
@@ -158,12 +163,12 @@ class CachedContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Delegator::class, $object);
-        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
-        $this->assertInstanceOf(Service::class, $callback());
+        self::assertInstanceOf(Delegator::class, $object);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Service::class, $callback());
     }
 }

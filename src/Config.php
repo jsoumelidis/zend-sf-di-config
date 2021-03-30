@@ -2,6 +2,7 @@
 
 namespace JSoumelidis\SymfonyDI\Config;
 
+use ArrayObject;
 use Closure;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -9,36 +10,34 @@ use Symfony\Component\DependencyInjection\Reference;
 use UnexpectedValueException;
 use Zend\ContainerConfigTest\DelegatorTestTrait;
 
+use function class_exists;
+use function get_class;
+use function gettype;
+use function is_array;
+use function is_callable;
+use function is_object;
+use function is_string;
+
 class Config implements ConfigInterface
 {
-    /**
-     * @var array
-     */
+    /** @var array */
     private $config;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $servicesAsSynthetic;
 
     /**
-     * Config constructor.
-     *
      * @param array $config
-     * @param bool $servicesAsSynthetic
      */
     public function __construct(array $config, bool $servicesAsSynthetic = false)
     {
-        $this->config = $config;
+        $this->config              = $config;
         $this->servicesAsSynthetic = $servicesAsSynthetic;
     }
 
-    /**
-     * @param Container $container
-     */
     public function setSyntheticServices(Container $container): void
     {
-        $container->set('config', new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS));
+        $container->set('config', new ArrayObject($this->config, ArrayObject::ARRAY_AS_PROPS));
 
         if (isset($this->config['dependencies']) && is_array($this->config['dependencies'])) {
             $dependencies = $this->config['dependencies'];
@@ -54,7 +53,7 @@ class Config implements ConfigInterface
                 foreach ($dependencies['factories'] as $name => $factory) {
                     if (is_object($factory) || (is_array($factory) && is_object($factory[0]))) {
                         $factoryObjectServiceId = $this->getFactoryObjectServiceId($name);
-                        $factoryObject = is_object($factory) ? $factory : $factory[0];
+                        $factoryObject          = is_object($factory) ? $factory : $factory[0];
 
                         $container->set($factoryObjectServiceId, $factoryObject);
                     }
@@ -68,7 +67,7 @@ class Config implements ConfigInterface
                         foreach ($delegators as $index => $delegator) {
                             if (is_object($delegator) || (is_array($delegator) && is_object($delegator[0]))) {
                                 $delegatorObjectServiceId = $this->getDelegatorObjectServiceId($name, $index);
-                                $delegatorObject = is_object($delegator) ? $delegator : $delegator[0];
+                                $delegatorObject          = is_object($delegator) ? $delegator : $delegator[0];
 
                                 $container->set($delegatorObjectServiceId, $delegatorObject);
                             }
@@ -80,16 +79,16 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     public function configureContainerBuilder(ContainerBuilder $builder)
     {
         if ($this->servicesAsSynthetic) {
-            $builder->register('config', \ArrayObject::class)
+            $builder->register('config', ArrayObject::class)
                 ->setSynthetic(true)
                 ->setPublic(true);
         } else {
-            $config = new \ArrayObject($this->config, \ArrayObject::ARRAY_AS_PROPS);
+            $config = new ArrayObject($this->config, ArrayObject::ARRAY_AS_PROPS);
             $builder->set('config', $config);
         }
 
@@ -120,6 +119,7 @@ class Config implements ConfigInterface
 
                     /**
                      * Workaround for
+                     *
                      * @see InvokableTestTrait::testFetchingNonExistingInvokableServiceResultsInException
                      */
                     if (! class_exists($invokable)) {
@@ -175,8 +175,6 @@ class Config implements ConfigInterface
      * Creates an internal service id
      *
      * @param string $name A name to create the id for
-     *
-     * @return string
      */
     protected function zendSmSfDiBridgeCreateId(string $name): string
     {
@@ -189,8 +187,6 @@ class Config implements ConfigInterface
      * @param string $id Service name to create a factory for
      * @param string|callable|array|object $factory The factory definition
      * @param ContainerBuilder $builder The builder that factory will be injected
-     *
-     * @return void
      */
     protected function injectFactory(string $id, $factory, ContainerBuilder $builder): void
     {
@@ -203,7 +199,7 @@ class Config implements ConfigInterface
         if (is_object($factory) || (is_array($factory) && is_object($factory[0]) && is_string($factory[1]))) {
             //register factory object as service
             $factoryObjectServiceId = $this->getFactoryObjectServiceId($id);
-            $factoryObject = is_object($factory) ? $factory : $factory[0];
+            $factoryObject          = is_object($factory) ? $factory : $factory[0];
 
             if ($this->servicesAsSynthetic) {
                 $builder->register($factoryObjectServiceId, get_class($factoryObject))
@@ -240,11 +236,6 @@ class Config implements ConfigInterface
             ->setArguments([$factory, new Reference('service_container'), $id]);
     }
 
-    /**
-     * @param string $id
-     *
-     * @return string
-     */
     protected function getFactoryObjectServiceId(string $id): string
     {
         return $this->zendSmSfDiBridgeCreateId("{$id}.factory.service");
@@ -256,8 +247,6 @@ class Config implements ConfigInterface
      * @param string $id Service id that delegators will be injected for
      * @param array $delegators Delegators
      * @param ContainerBuilder $builder The builder that delegators will be injected
-     *
-     * @return void
      */
     protected function injectDelegators(string $id, array $delegators, ContainerBuilder $builder): void
     {
@@ -323,11 +312,12 @@ class Config implements ConfigInterface
              *
              * - allow for dumping/caching using synthetic services
              */
-            if (is_object($delegator) ||
+            if (
+                is_object($delegator) ||
                 (is_array($delegator) && is_object($delegator[0]) && is_string($delegator[1]))
             ) {
                 //register delegator (object) as service
-                $delegatorObject = is_object($delegator) ? $delegator : $delegator[0];
+                $delegatorObject          = is_object($delegator) ? $delegator : $delegator[0];
                 $delegatorObjectServiceId = $this->getDelegatorObjectServiceId($id, $key);
 
                 if ($this->servicesAsSynthetic) {
@@ -346,7 +336,7 @@ class Config implements ConfigInterface
                             new Reference($delegatorObjectServiceId),
                             new Reference('service_container'),
                             $id,
-                            new Reference($factoryCallbackId)
+                            new Reference($factoryCallbackId),
                         ]);
                 } else {
                     $builder->register($delegatorFactoryCallbackId, Closure::class)
@@ -357,7 +347,7 @@ class Config implements ConfigInterface
                             $delegator[1],
                             new Reference('service_container'),
                             $id,
-                            new Reference($factoryCallbackId)
+                            new Reference($factoryCallbackId),
                         ]);
                 }
             } else {
@@ -369,7 +359,7 @@ class Config implements ConfigInterface
                         $delegator,
                         new Reference('service_container'),
                         $id,
-                        new Reference($factoryCallbackId)
+                        new Reference($factoryCallbackId),
                     ]);
             }
 
@@ -385,27 +375,17 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @param string $id
      * @param string|int $index
-     *
-     * @return string
      */
     protected function getDelegatorObjectServiceId(string $id, $index): string
     {
         return $this->zendSmSfDiBridgeCreateId("{$id}.delegator.{$index}.service");
     }
 
-    /**
-     * @param string $invokable
-     * @param ContainerBuilder $builder
-     * @param string|null $prefix
-     *
-     * @return void
-     */
     private function registerWrapperForService(
         string $invokable,
         ContainerBuilder $builder,
-        string $prefix = null
+        ?string $prefix = null
     ): void {
         $wrapperId = $prefix
             //@codeCoverageIgnoreStart

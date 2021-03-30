@@ -2,28 +2,29 @@
 
 namespace JSoumelidisTest\SymfonyDI\Config;
 
+use Closure;
+use Exception;
 use JSoumelidis\SymfonyDI\Config\Config;
 use JSoumelidis\SymfonyDI\Config\ContainerFactory;
+use Laminas\ContainerConfigTest\AbstractMezzioContainerConfigTest;
+use Laminas\ContainerConfigTest\TestAsset\Delegator;
+use Laminas\ContainerConfigTest\TestAsset\DelegatorFactory;
+use Laminas\ContainerConfigTest\TestAsset\Factory;
+use Laminas\ContainerConfigTest\TestAsset\Service;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Zend\ContainerConfigTest\AbstractExpressiveContainerConfigTest;
-use Zend\ContainerConfigTest\TestAsset\Delegator;
-use Zend\ContainerConfigTest\TestAsset\DelegatorFactory;
-use Zend\ContainerConfigTest\TestAsset\Factory;
-use Zend\ContainerConfigTest\TestAsset\Service;
+use UnexpectedValueException;
 
-class ContainerTest extends AbstractExpressiveContainerConfigTest
+class ContainerTest extends AbstractMezzioContainerConfigTest
 {
     /**
      * @param array $config
-     * @param bool  $servicesAsSynthetic
-     *
      * @return ContainerBuilder
      */
-    protected function createContainer(array $config, bool $servicesAsSynthetic = false) : ContainerInterface
+    protected function createContainer(array $config, bool $servicesAsSynthetic = false): ContainerInterface
     {
-        $factory = new ContainerFactory();
+        $factory   = new ContainerFactory();
         $container = $factory(new Config(['dependencies' => $config], $servicesAsSynthetic));
 
         //Everything should work with compiled container also
@@ -42,13 +43,10 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies, true);
 
-        $this->assertTrue($container->has(Service::class));
-        $this->assertTrue($container->getDefinition(Service::class)->isSynthetic());
+        self::assertTrue($container->has(Service::class));
+        self::assertTrue($container->getDefinition(Service::class)->isSynthetic());
     }
 
-    /**
-     * @expectedException \Exception
-     */
     public function testServicesAsSyntheticCannotBeFetched(): void
     {
         $dependencies = [
@@ -56,6 +54,8 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
                 Service::class => $service = new Service(),
             ],
         ];
+
+        $this->expectException(Exception::class);
 
         $container = $this->createContainer($dependencies, true);
 
@@ -70,18 +70,18 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
             ],
             'delegators' => [
                 Service::class => [
-                    [Assets\DelegatorFactory::class, 'create']
+                    [Assets\DelegatorFactory::class, 'create'],
                 ],
             ],
         ];
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
-        $this->assertInstanceOf(Service::class, $object);
-        $this->assertInstanceOf(ContainerInterface::class, $object->injected[0]);
+        self::assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(ContainerInterface::class, $object->injected[0]);
     }
 
     public function testObjectMethodCallableAsFactory(): void
@@ -94,11 +94,11 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(Service::class, $object);
     }
 
     public function testObjectMethodCallableAsFactoryUsingSyntheticServices(): void
@@ -111,11 +111,11 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies, true);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -131,10 +131,10 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
-        $this->assertInstanceOf(Service::class, $object);
+        self::assertInstanceOf(Service::class, $object);
     }
 
     public function testObjectAsFactoryUsingSyntheticServices(): void
@@ -147,11 +147,11 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies, true);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.factory.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.factory.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -172,13 +172,13 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Delegator::class, $object);
-        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
-        $this->assertInstanceOf(Service::class, $callback());
+        self::assertInstanceOf(Delegator::class, $object);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Service::class, $callback());
     }
 
     public function testObjectMethodCallableAsDelegatorFactoryUsingSyntheticServices(): void
@@ -196,11 +196,11 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies, true);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
@@ -221,13 +221,13 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
 
         $object = $container->get(Service::class);
 
-        $this->assertInstanceOf(Delegator::class, $object);
-        $this->assertInstanceOf(\Closure::class, $callback = $object->callback);
-        $this->assertInstanceOf(Service::class, $callback());
+        self::assertInstanceOf(Delegator::class, $object);
+        self::assertInstanceOf(Closure::class, $callback = $object->callback);
+        self::assertInstanceOf(Service::class, $callback());
     }
 
     public function testObjectAsDelegatorFactoryUsingSyntheticServices(): void
@@ -245,19 +245,16 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
 
         $container = $this->createContainer($dependencies, true);
 
-        $this->assertTrue($container->has(Service::class));
+        self::assertTrue($container->has(Service::class));
         $this->expectExceptionMessage(
-            'You have requested a synthetic service '.
-            '("smsfbridge.Zend\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '.
-            'The DIC does not know how to construct this service.'
+            'You have requested a synthetic service '
+            . '("smsfbridge.Laminas\ContainerConfigTest\TestAsset\Service.delegator.0.service"). '
+            . 'The DIC does not know how to construct this service.'
         );
 
         $container->get(Service::class);
     }
 
-    /**
-     * @expectedException \UnexpectedValueException
-     */
     public function testDoesNotAcceptDelegatorOnUndefinedServices(): void
     {
         $dependencies = [
@@ -268,11 +265,13 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
             ],
         ];
 
+        $this->expectException(UnexpectedValueException::class);
+
         $this->createContainer($dependencies);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreatesPrivateDelegatorForPublicAliasedPrivateServices(): void
     {
@@ -300,21 +299,21 @@ class ContainerTest extends AbstractExpressiveContainerConfigTest
         $config = new Config(['dependencies' => $dependencies]);
         $config->configureContainerBuilder($builder);
 
-        $this->assertTrue($builder->hasDefinition(Service::class));
+        self::assertTrue($builder->hasDefinition(Service::class));
 
         $definition = $builder->getDefinition(Service::class);
 
-        $this->assertEquals($serviceDefinition->isPublic(), $definition->isPublic());
+        self::assertEquals($serviceDefinition->isPublic(), $definition->isPublic());
 
         $builder->compile();
 
-        $this->assertFalse($builder->has(Service::class));
-        $this->assertTrue($builder->has('myalias'));
+        self::assertFalse($builder->has(Service::class));
+        self::assertTrue($builder->has('myalias'));
 
         /** @var Delegator $service */
         $service = $builder->get('myalias');
 
-        $this->assertInstanceOf(Delegator::class, $service);
-        $this->assertInstanceOf(\Closure::class, $service->callback);
+        self::assertInstanceOf(Delegator::class, $service);
+        self::assertInstanceOf(Closure::class, $service->callback);
     }
 }
